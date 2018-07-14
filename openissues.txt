@@ -1,0 +1,13 @@
+ISSUE 1:
+Section: GPS Trajectories
+Consecutive stay at different locations without a go in between them should perhaps have a "go" deduced. This causes problems like:
+- the way durations are calculated means that a stay ends the same time the next starts even when they are far apart.
+- the number of moves is off, since there is clearly a move missing if there is a stay at work followed by a stay at home
+Example day: Julia, 12th June. Phone died so no data between end of conference at DTU and start of party at home. Also doesn't pick up walks to playground and back so it looks like stay at home, stay at playground, stay at home without any moving.
+Possible solutions:
+- change how durations are calculated so that they end at the last point of current event rather than first of next.
+- infer a move if there are two consecutive stays with different location ID's (then can use timing from other events when estimating a move)
+
+ISSUE 2:
+Action range calculation // Mobility Zone 2
+Change the action range of stays to max instead of centroid, then could pick up more of the mobility zone 2 entries.
