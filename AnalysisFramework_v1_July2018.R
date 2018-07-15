@@ -35,6 +35,13 @@ library(factoextra)
 # Load custom functions:
 source("./Rscripts/jrt_utils.R")
 source("./Rscripts/jrt_mobility.R")
+source("./Rscripts/users.R")
+
+# SETTINGS ==========================================
+
+# Select participant
+P <- participants$P03JJ
+list2env(P, .GlobalEnv); remove(P)
 
 # Define constants:
 folder <- "M:/PhD_Folder/CaseStudies/Data_dumps/dump_current_analysis/" # path to folder that holds multiple .csv files, downloaded from nightingale webportal
@@ -45,32 +52,19 @@ to_plot <- c("activity", # from data checker, for debugging purposes only (visua
              "location",
              "screen",
              "steps")
-users <- list(julia = "93a6d31c-e216-48d8-a9a2-f2f72362548d",
-              dean = "b1316280-38a6-45e1-9bb9-7afb2a1a2a96",  # 9.March - 15.March
-              luna = "4afe61c5-c5cc-4de4-8f50-9499057668ad",
-              per = "7bf5fec3-f46f-419e-9573-001fe9b47d81",
-              verena = "a0c74a88-b293-4b31-92c0-967502b28132",# 6.March - 13.March
-              agzam = "52152dda-0f54-46d1-affa-6dea85f840dc", # 6.March - 14.March
-              anja = "36f9d061-c5e9-4f30-91b2-83351ff40288",  # 28.Feb - 7.March
-              nina = "b12888e9-ee4f-42bc-9494-673e5a005e0e",  # 19.June - 26.June
-              #P01FA = "6321f7ef-a958-44ad-b8e5-5aa04bc004e1",
-              P03JJ = "e9f44eb5-8962-4894-83c6-783025c6eaea", # 30.January - 8.May
-              P06SS = "f9f24838-c844-42d4-8343-b20ebdd220f3", # 16.March - 6.June
-              P07MG = "4fbfddd0-a346-41c8-be8d-f8804b5068d3", # 17.March - 16.May
-              P08UH = "a85f299e-7a09-4ba7-bc19-8a200c2686c2", # 6.March - 17.May
-              P10JL = "d05fa984-8d3b-4405-b417-211d1a3f50d6", # 9.March - 4.June
-              P13NB = "75cc5240-7805-4550-aeae-873df9984710") # 17.April - 13.June
-
-# SETTINGS ==========================================
-# Select user and period of interest:
-
-# select user:
-userid <- users$julia
-
-# set the period of interest:
-d.start <- as.POSIXct("2018-06-12") # yyyy-mm-dd 
-d.stop <- as.POSIXct("2018-06-30")
 d.study <- as.numeric(round(difftime(d.stop,d.start,units="days")))
+
+
+# # SETTINGS ==========================================
+# # Select user and period of interest:
+# 
+# # select user:
+# userid <- users$nina
+# 
+# # set the period of interest:
+# d.start <- as.POSIXct("2018-06-20") # yyyy-mm-dd 
+# d.stop <- as.POSIXct("2018-06-24")
+# d.study <- as.numeric(round(difftime(d.stop,d.start,units="days")))
 
 # IMPORT AND RESTRUCTURE DATA ------------------------
 
@@ -78,7 +72,7 @@ datasets.all <- get.data(folder, not.in.use) %>%
   lapply(restructure, userid, d.start, d.stop)
 datasets.all <- Filter(function(x) !is.null(x)[1],datasets.all) # remove any null dataframes
 
-remove(folder, not.in.use, userid, users)
+remove(folder, not.in.use, userid)
 
 # MOBILITY  ==========================================
 
@@ -144,7 +138,7 @@ metrics.results %<>% mutate(mcp.area = mcp.areas$mcp.area) # TODO: create the po
 #   mutate(day=c(1:nrow(metrics.results)), participant = "nina")
 # saveRDS(nina.metrics,"M:/PhD_Folder/CaseStudies/Data_analysis/output/nina_metrics.Rds")
 
-saveRDS(metrics.results,"M:/PhD_Folder/CaseStudies/Data_analysis/output/metrics_p03jj.Rds")
+# saveRDS(metrics.results,"M:/PhD_Folder/CaseStudies/Data_analysis/output/metrics_p03jj.Rds")
 
 # END ---
 
@@ -170,6 +164,92 @@ plot_ly(walk.sample,
 
 
 # STEP COUNT ===========================
+
+
+# define variables:
+
+
+# step count log file
+steps.log <- datasets.all$step_count %>% 
+  filter(timestamp>=d.start, timestamp<=(d.start %m+% days(d.study))) %>% # get timeframe of just the day of interest
+  select(step_count, dsource, timestamp, intervals.alt, dates, times)
+
+plot_ly(steps.log,
+        x = ~timestamp,
+        y = ~step_count,
+        color = ~dsource,
+        colors = c("orange","deepskyblue2"),
+        type = "scatter",
+        mode = "lines+markers")
+
+steps.log %>% count(dsource)
+
+# Preprocessing: separate sources and fix to cumulate by day
+steps.watch <- steps.log %>% filter(dsource=="watch") %>% select(timestamp, step_count, dates, times) %>%
+  mutate(dstep = c(0,diff(step_count)),
+         dtime = c(0,difftime(tail(timestamp,-1),head(timestamp,-1),units="mins")))
+steps.phone <- steps.log %>% filter(dsource=="phone") %>% select(timestamp, step_count, dates, times) %>%
+  mutate(dstep = c(0,diff(step_count)),
+         dtime = c(0,difftime(tail(timestamp,-1),head(timestamp,-1),units="mins")))
+
+# detect where negative and set to 0
+steps.watch$dstep[steps.watch$dstep<0] <- 0
+steps.phone$dstep[steps.phone$dstep<0] <- 0
+
+# cummulate over day instead
+steps.watch %<>% group_by(dates) %>% mutate(stepcounter = cumsum(dstep))
+steps.phone %<>% group_by(dates) %>% mutate(stepcounter = cumsum(dstep)) 
+
+# daily totals
+steps.totals <- merge(x=steps.watch %>% summarise(total = max(stepcounter)), 
+                      y=steps.phone %>% summarise(total = max(stepcounter)),
+                      by="dates", suffixes=c(".watch",".phone"))
+
+
+plot_ly(data = steps.watch,
+        x = ~timestamp,
+        y = ~stepcounter,
+        type = "scatter",
+        mode = "lines+markers") %>%
+  add_trace(data = steps.phone,
+          x = ~timestamp,
+          y = ~stepcounter)
+
+
+
+# END
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
