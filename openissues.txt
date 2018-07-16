@@ -1,5 +1,5 @@
 ISSUE 1:
-Section: GPS Trajectories
+Mobility // GPS Trajectories
 Consecutive stay at different locations without a go in between them should perhaps have a "go" deduced. This causes problems like:
 - the way durations are calculated means that a stay ends the same time the next starts even when they are far apart.
 - the number of moves is off, since there is clearly a move missing if there is a stay at work followed by a stay at home
@@ -9,5 +9,19 @@ Possible solutions:
 - infer a move if there are two consecutive stays with different location ID's (then can use timing from other events when estimating a move)
 
 ISSUE 2:
-Action range calculation // Mobility Zone 2
+Mobility // Action range calculation > Mobility Zone 2
 Change the action range of stays to max instead of centroid, then could pick up more of the mobility zone 2 entries.
+
+ISSUE 3:
+Stepcount // Daily totals
+The stepcount sometimes seems to swing between 2 levels. This causes the cumulative sum to be thrown way up, since negative differences are ignored (to handle reboots setting to 0), leading to giant positive counts repeating every swing. Example: P03JJ around 27th Feb.
+
+ISSUE 4:
+Stepcount // Daily totals
+When watch data initialises, seems to start with one really high value before reseting and begining to count up. Need to filter this out. Examples: P06 and P07.
+Notes: 
+- doesn't affect cumulative sum, since first value is lost in process of counting "diff"
+
+ISSUE 5:
+Stepcount // Daily totals
+Random outlier of a really high stepcount after long gap sets entire day into the 100k level. P08, watch data, around 27th March.

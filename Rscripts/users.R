@@ -22,8 +22,8 @@ participants <- list(
   
   daisy = list(
     userid = "b1316280-38a6-45e1-9bb9-7afb2a1a2a96",
-    d.start = as.POSIXct("2018-06-20"),
-    d.stop = as.POSIXct("2018-06-24")),
+    d.start = as.POSIXct("2018-03-09"),
+    d.stop = as.POSIXct("2018-03-16")),
   
   violet = list(
     userid = "a0c74a88-b293-4b31-92c0-967502b28132",
@@ -63,7 +63,7 @@ participants <- list(
   P08UH = list(
     userid = "a85f299e-7a09-4ba7-bc19-8a200c2686c2",
     d.start = as.POSIXct("2018-03-06"), 
-    d.stop = as.POSIXct("2018-03-18")),
+    d.stop = as.POSIXct("2018-05-18")),
   
   P10JL = list(
     userid = "d05fa984-8d3b-4405-b417-211d1a3f50d6",

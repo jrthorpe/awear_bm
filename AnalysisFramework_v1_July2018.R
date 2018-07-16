@@ -35,36 +35,31 @@ library(factoextra)
 # Load custom functions:
 source("./Rscripts/jrt_utils.R")
 source("./Rscripts/jrt_mobility.R")
+source("./Rscripts/jrt_steps.R")
 source("./Rscripts/users.R")
 
 # SETTINGS ==========================================
 
 # Select participant
-P <- participants$P03JJ
+P <- participants$P10JL
 list2env(P, .GlobalEnv); remove(P)
 
 # Define constants:
 folder <- "M:/PhD_Folder/CaseStudies/Data_dumps/dump_current_analysis/" # path to folder that holds multiple .csv files, downloaded from nightingale webportal
-not.in.use <- c("battery", "screen", "bluetooth","hardware_info","wearable","wifi","calllog","sms")
-to_plot <- c("activity", # from data checker, for debugging purposes only (visualise all datasets)
-             "battery",
-             "exps",
-             "location",
-             "screen",
-             "steps")
+not.in.use <- c("battery", 
+                "screen",
+                "experience_sampling",
+                #"activity",
+                #"step_count",
+                "location",
+                "bluetooth","hardware_info","wifi","wearable","calllog","sms") #last row items never used
+# to_plot <- c("activity", # from data checker, for debugging purposes only (visualise all datasets)
+#              "battery",
+#              "exps",
+#              "location",
+#              "screen",
+#              "steps")
 d.study <- as.numeric(round(difftime(d.stop,d.start,units="days")))
-
-
-# # SETTINGS ==========================================
-# # Select user and period of interest:
-# 
-# # select user:
-# userid <- users$nina
-# 
-# # set the period of interest:
-# d.start <- as.POSIXct("2018-06-20") # yyyy-mm-dd 
-# d.stop <- as.POSIXct("2018-06-24")
-# d.study <- as.numeric(round(difftime(d.stop,d.start,units="days")))
 
 # IMPORT AND RESTRUCTURE DATA ------------------------
 
@@ -142,6 +137,109 @@ metrics.results %<>% mutate(mcp.area = mcp.areas$mcp.area) # TODO: create the po
 
 # END ---
 
+# STEP COUNT ===========================
+
+#define variables
+win.size <- 15 # window size in minutes for...
+
+# step count log file
+steps.log <- datasets.all$step_count %>% 
+  filter(timestamp>=d.start, timestamp<=(d.start %m+% days(d.study))) %>% # get timeframe of just the day of interest
+  select(step_count, dsource, timestamp, intervals.alt, dates, times)
+
+# for debugging/investigation
+# steps_vis(steps.log)
+# steps.log %>% count(dsource) 
+
+#** Daily total step counts -------
+steps.watch <- daily_steps(steps.log,"watch")
+steps.phone <- daily_steps(steps.log,"phone")
+
+# daily totals #TODO:fix the merge
+steps.totals <- merge(x=steps.watch %>% summarise(total = max(stepcounter)), 
+                      y=steps.phone %>% summarise(total = max(stepcounter)),
+                      by="dates", suffixes=c(".watch",".phone"),
+                      incomparables = NA)
+
+
+plot_ly(data = steps.watch,
+        x = ~timestamp,
+        y = ~stepcounter,
+        type = "scatter",
+        mode = "lines+markers",
+        name = "watch") %>%
+  add_trace(data = steps.phone,
+          x = ~timestamp,
+          y = ~stepcounter,
+          name = "phone")
+
+plot_ly(data = steps.watch,
+        x = ~times,
+        y = ~stepcounter,
+        type = "scatter",
+        mode = "lines")
+
+plot_ly(data = steps.phone,
+        x = ~times,
+        y = ~stepcounter,
+        type = "scatter",
+        mode = "lines")
+
+#** Extraction walking bouts from step counts -------
+
+# get steps in 5 minute windows
+steps.phone %<>% mutate(minute = as.numeric(format(steps.phone$timestamp, "%H"))*60 +
+                          as.numeric(format(steps.phone$timestamp, "%M")))
+steps.phone %<>% mutate(window = ceiling(minute/win.size))
+steps.watch %<>% mutate(minute = as.numeric(format(steps.watch$timestamp, "%H"))*60 +
+                          as.numeric(format(steps.watch$timestamp, "%M")))
+steps.watch %<>% mutate(window = ceiling(minute/win.size))
+
+bob <- steps.phone %>% group_by(dates,window) %>% summarise(steps.win = sum(dstep))
+cat <- steps.watch %>% group_by(dates,window) %>% summarise(steps.win = sum(dstep))
+
+plot_ly(bob,
+        x = ~dates,
+        y = ~window,
+        z = ~steps.win,
+        zmin=0,                         
+        zmax=1600,
+        type = "heatmap",
+        colorscale = "Greys")
+plot_ly(cat,
+        x = ~dates,
+        y = ~window,
+        z = ~steps.win,
+        zmin=0,                         
+        zmax=1000,
+        type = "heatmap",
+        colorscale = "Greys")
+
+steps.phone %<>% mutate(walkspeed = ifelse(dtime>0, dstep/dtime, 0))
+steps.watch %<>% mutate(walkspeed = ifelse(dtime>0, dstep/dtime, 0))
+
+plot_ly(steps.phone,
+        x = ~dates,
+        y = ~window,
+        z = ~walkspeed,
+        zmin=0,                         
+        zmax=100,
+        type = "heatmap",
+        colorscale = "Greys")
+
+plot_ly(steps.phone %>% group_by(dates),
+        x = ~timestamp,
+        y = ~walkspeed,
+        #color = ~walkspeed,
+        # zmin=0,                         
+        # zmax=100,
+        type = "scatter",
+        mode = "lines+markers")
+#colorscale = "Greys")
+
+
+# END
+
 
 # ACTIVITY ===========================
 
@@ -152,7 +250,7 @@ walk.sample <- activity %>%
 
 
 d.walk <- difftime(walk.sample$timestamp[-1],
-         walk.sample$timestamp[1:(nrow(walk.sample)-1)],units="mins")
+                   walk.sample$timestamp[1:(nrow(walk.sample)-1)],units="mins")
 
 walk.sample %<>% mutate(intervals = c(0,d.walk))
 
@@ -163,76 +261,25 @@ plot_ly(walk.sample,
         mode = "lines+markers")
 
 
-# STEP COUNT ===========================
-
-
-# define variables:
-
-
-# step count log file
-steps.log <- datasets.all$step_count %>% 
-  filter(timestamp>=d.start, timestamp<=(d.start %m+% days(d.study))) %>% # get timeframe of just the day of interest
-  select(step_count, dsource, timestamp, intervals.alt, dates, times)
-
-plot_ly(steps.log,
-        x = ~timestamp,
-        y = ~step_count,
-        color = ~dsource,
-        colors = c("orange","deepskyblue2"),
+plot_ly(activity %>% group_by(dates),
+        x=~dates,
+        y=~times,
+        color = ~as.factor(label),
         type = "scatter",
-        mode = "lines+markers")
+        mode = "markers")
 
-steps.log %>% count(dsource)
-
-# Preprocessing: separate sources and fix to cumulate by day
-steps.watch <- steps.log %>% filter(dsource=="watch") %>% select(timestamp, step_count, dates, times) %>%
-  mutate(dstep = c(0,diff(step_count)),
-         dtime = c(0,difftime(tail(timestamp,-1),head(timestamp,-1),units="mins")))
-steps.phone <- steps.log %>% filter(dsource=="phone") %>% select(timestamp, step_count, dates, times) %>%
-  mutate(dstep = c(0,diff(step_count)),
-         dtime = c(0,difftime(tail(timestamp,-1),head(timestamp,-1),units="mins")))
-
-# detect where negative and set to 0
-steps.watch$dstep[steps.watch$dstep<0] <- 0
-steps.phone$dstep[steps.phone$dstep<0] <- 0
-
-# cummulate over day instead
-steps.watch %<>% group_by(dates) %>% mutate(stepcounter = cumsum(dstep))
-steps.phone %<>% group_by(dates) %>% mutate(stepcounter = cumsum(dstep)) 
-
-# daily totals
-steps.totals <- merge(x=steps.watch %>% summarise(total = max(stepcounter)), 
-                      y=steps.phone %>% summarise(total = max(stepcounter)),
-                      by="dates", suffixes=c(".watch",".phone"))
+#
 
 
-plot_ly(data = steps.watch,
-        x = ~timestamp,
-        y = ~stepcounter,
-        type = "scatter",
-        mode = "lines+markers") %>%
-  add_trace(data = steps.phone,
-          x = ~timestamp,
-          y = ~stepcounter)
-
-
-
-# END
+min.series <- c(1:(24*60))
+win.series <- rep(1:288, each=5, times=1)
+cbind(min.series,ceiling((min.series/5)),win.series)
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
+#
 
 
 
@@ -257,6 +304,13 @@ plot_ly(data = steps.watch,
 
 
 # DEBUGGING AREA ----
+
+
+# Looking at other variables where stepcount drops
+steps.watch$step_count[steps.watch$dstep<0]
+steps.phone$step_count[steps.phone$dstep<0]
+
+
 
 Metrics_from_Logsheets %<>% mutate(dates=as.Date(dates))
 test<-merge(metrics.results,Metrics_from_Logsheets,by="dates")
