@@ -25,3 +25,7 @@ Notes:
 ISSUE 5:
 Stepcount // Daily totals
 Random outlier of a really high stepcount after long gap sets entire day into the 100k level. P08, watch data, around 27th March.
+
+ISSUE 6:
+Stepcount // Daily totals
+Merge leaves out any dates that don't exist in both sets. Need an alternative that keeps all with NA's or similar.

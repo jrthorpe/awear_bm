@@ -19,24 +19,13 @@ daily_steps <- function(steps.log, device){
   return(steps)
 }
 
-# For visualising step data:
-steps_vis <- function(steps.log){
+pattern_steps <- function(steps, win.size){
   
-  plot_ly(steps.log,
-          x = ~timestamp,
-          y = ~step_count,
-          color = ~dsource,
-          colors = c("orange","deepskyblue2"),
-          type = "scatter",
-          mode = "lines+markers")
+  # get steps in windows
+  minute <- as.numeric(format(steps$timestamp, "%H"))*60 + as.numeric(format(steps$timestamp, "%M")) # minute since midnight
+  steps %<>% mutate(window = ceiling(minute/win.size))
+  win.totals <- steps %>% group_by(dates,window) %>% summarise(steps.win = sum(dstep))
   
-  # P <- plot_ly(steps.log,
-  #       x = ~timestamp,
-  #       y = ~step_count,
-  #       color = ~dsource,
-  #       colors = c("orange","deepskyblue2"),
-  #       type = "scatter",
-  #       mode = "lines+markers")
-  # return(P)
-}
+  return(list(steps, win.totals))
 
+  }

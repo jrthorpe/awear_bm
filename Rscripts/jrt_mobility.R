@@ -306,7 +306,7 @@ get_metrics <- function(traj.summary) {
 
 # MINIMUM CONVEX POLYGON ---
 
-get_mcp_area <- function(lon,lat, quantile) {
+get_mcp_area <- function(lon,lat, Qd) {
   # calculates minimum convex polygon from GPS data
   #
   
@@ -320,7 +320,7 @@ get_mcp_area <- function(lon,lat, quantile) {
   
   # get subset of points within specified quantile of distances
   indx <- 1:length(distances)
-  percentages <- indx[distances <= quantile(distances, quantile)]
+  percentages <- indx[distances <= quantile(distances, Qd)]
   locations.subset <- locations[percentages, ]
   
   # get minimum convex polygon
@@ -336,7 +336,7 @@ get_mcp_area <- function(lon,lat, quantile) {
   return(mcp.poly.area)
 }
 
-get_mcp <- function(locations, quantile) {
+get_mcp <- function(locations, Qd) {
   # calculates minimum convex polygon from GPS data
   #
   
@@ -350,7 +350,7 @@ get_mcp <- function(locations, quantile) {
   
   # get subset of points within specified quantile of distances
   indx <- 1:length(distances)
-  percentages <- indx[distances <= quantile(distances, quantile)]
+  percentages <- indx[distances <= quantile(distances, Qd)]
   locations.subset <- locations[percentages, ]
   
   # get minimum convex polygon

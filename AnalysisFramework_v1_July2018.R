@@ -80,6 +80,7 @@ dD <- 100 # delta D, diagonal distance boundary in meters
 time.threshold.stay <- 10 # minimum duration of a stay, in minutes
 time.threshold.go <- 5 # cut-off for filtering out "go" events to/from same location, in minutes
 dist.threshold <- 30 # distance in meters within which two centriods belong to same stay location
+Qd <- .99 # quantile of distances to include in the MC polygon
 #doi <- as.POSIXct("2018-01-30") # day of interest (use when not d.start)
 
 # GPS log file
@@ -123,7 +124,7 @@ metrics.results <- get_metrics(traj.summary)
 
 # minimum convex polygon(reference: http://mgritts.github.io/2016/04/02/homerange-mcp/)
 mcp.areas <- gps.traj  %>% group_by(dates) %>% 
-  summarise(mcp.area=get_mcp_area(lon=lon,lat=lat,quantile=.99))                                  
+  summarise(mcp.area=get_mcp_area(lon=lon,lat=lat,Qd=Qd))                                  
 metrics.results %<>% mutate(mcp.area = mcp.areas$mcp.area) # TODO: create the possibility to get out the coords and plot for a visual check and for the paper (or other demo).
 
 # **Save Results ------
@@ -161,87 +162,33 @@ steps.totals <- merge(x=steps.watch %>% summarise(total = max(stepcounter)),
                       by="dates", suffixes=c(".watch",".phone"),
                       incomparables = NA)
 
-
-plot_ly(data = steps.watch,
-        x = ~timestamp,
-        y = ~stepcounter,
-        type = "scatter",
-        mode = "lines+markers",
-        name = "watch") %>%
-  add_trace(data = steps.phone,
-          x = ~timestamp,
-          y = ~stepcounter,
-          name = "phone")
-
-plot_ly(data = steps.watch,
-        x = ~times,
-        y = ~stepcounter,
-        type = "scatter",
-        mode = "lines")
-
-plot_ly(data = steps.phone,
-        x = ~times,
-        y = ~stepcounter,
-        type = "scatter",
-        mode = "lines")
-
 #** Extraction walking bouts from step counts -------
 
-# get steps in 5 minute windows
-steps.phone %<>% mutate(minute = as.numeric(format(steps.phone$timestamp, "%H"))*60 +
-                          as.numeric(format(steps.phone$timestamp, "%M")))
-steps.phone %<>% mutate(window = ceiling(minute/win.size))
-steps.watch %<>% mutate(minute = as.numeric(format(steps.watch$timestamp, "%H"))*60 +
-                          as.numeric(format(steps.watch$timestamp, "%M")))
-steps.watch %<>% mutate(window = ceiling(minute/win.size))
+patterns <- pattern_steps(steps.phone %>% ungroup(), win.size = win.size)
 
-bob <- steps.phone %>% group_by(dates,window) %>% summarise(steps.win = sum(dstep))
-cat <- steps.watch %>% group_by(dates,window) %>% summarise(steps.win = sum(dstep))
-
-plot_ly(bob,
-        x = ~dates,
-        y = ~window,
-        z = ~steps.win,
-        zmin=0,                         
-        zmax=1600,
-        type = "heatmap",
-        colorscale = "Greys")
-plot_ly(cat,
-        x = ~dates,
-        y = ~window,
-        z = ~steps.win,
-        zmin=0,                         
-        zmax=1000,
-        type = "heatmap",
-        colorscale = "Greys")
-
-steps.phone %<>% mutate(walkspeed = ifelse(dtime>0, dstep/dtime, 0))
-steps.watch %<>% mutate(walkspeed = ifelse(dtime>0, dstep/dtime, 0))
-
-plot_ly(steps.phone,
-        x = ~dates,
-        y = ~window,
-        z = ~walkspeed,
-        zmin=0,                         
-        zmax=100,
-        type = "heatmap",
-        colorscale = "Greys")
-
-plot_ly(steps.phone %>% group_by(dates),
-        x = ~timestamp,
-        y = ~walkspeed,
-        #color = ~walkspeed,
-        # zmin=0,                         
-        # zmax=100,
-        type = "scatter",
-        mode = "lines+markers")
-#colorscale = "Greys")
-
+plot_ly(
+  patterns[[2]],
+  x = ~ dates,
+  y = ~ window,
+  z = ~ steps.win,
+  #zmin = 0,
+  zmax = ~floor(quantile(steps.win, .99)),
+  type = "heatmap",
+  colorscale = "Greys"
+)
 
 # END
 
 
 # ACTIVITY ===========================
+
+
+
+#** Window method -------
+
+
+
+#** difftime method -------
 
 activity <- datasets.all$activity
 walk.sample <- activity %>% 
