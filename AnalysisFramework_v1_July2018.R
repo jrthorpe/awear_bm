@@ -42,7 +42,7 @@ source("./Rscripts/users.R")
 # SETTINGS ==========================================
 
 # Select participant
-P <- participants$P10JL
+P <- participants$violet
 list2env(P, .GlobalEnv); remove(P)
 
 # Define constants:
@@ -202,23 +202,35 @@ win.size <- 10
 minute <- as.numeric(format(activity$timestamp, "%H"))*60 + as.numeric(format(activity$timestamp, "%M")) # minute since midnight
 activity.wins <- activity %>% 
   mutate(window = ceiling(minute / win.size)) %>% 
-  group_by(dates, window) %>% count(label) %>% 
+  group_by(dates, window) %>% count(activity) %>% #need to count activity instead of label for plot
   slice(which.max(n))
 
-activity.wins.alt <- activity %>% 
+activity.wins <- activity %>% 
   mutate(window = ceiling(minute / win.size)) %>% 
-  group_by(dates, window) %>% count(activity) %>% 
+  group_by(dates, window)
+
+win.activities <- activity.wins %>% count(activity) %>% 
   slice(which.max(n))
+
+win.times <- activity.wins %>%
+  slice(which.min(times))
+
+win.info <- merge(win.times %>% select(dates, times, timestamp, window),
+      win.activities,
+      by = c("dates","window"))
 
 plot_ly(
-  activity.wins.alt,
+  win.info,
   x = ~dates,
-  y = ~window,
+  y = ~timestamp,
   z = ~activity,
   type = "heatmap",
   #colors = brewer.pal(4,"Set2")
   colors = c("purple","yellow","grey")
 )
+
+# %>%
+#   layout(yaxis = a)
 
 #** Difftime method -------
 
