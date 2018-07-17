@@ -36,6 +36,7 @@ library(factoextra)
 source("./Rscripts/jrt_utils.R")
 source("./Rscripts/jrt_mobility.R")
 source("./Rscripts/jrt_steps.R")
+source("./Rscripts/jrt_activity.R")
 source("./Rscripts/users.R")
 
 # SETTINGS ==========================================
@@ -225,17 +226,58 @@ plot_ly(
 # separate data into separate streams each with own difftime
 # split each stream into bouts using a time threshold
 
-foot <- datasets.all$activity %>% filter(label=="Foot") %>% select(timestamp, confidence, dates, times) %>%
-  mutate(dtime = c(0, difftime(tail(timestamp, -1), head(timestamp, -1), units = "mins"))) %>%
-  mutate(split = ifelse(dtime>10, 1, 0)) %>%
-  mutate(event = cumsum(split)+1)
+still <- get_bouts(datasets.all$activity, "Still")
+still.bouts <- bout_info(still)
 
-plot_ly(foot %>% group_by(dates,event) %>% filter(confidence>50),
+foot <- get_bouts(datasets.all$activity, "Foot")
+foot.bouts <- bout_info(foot)
+
+bike <- get_bouts(datasets.all$activity, "Bicycle")
+bike.bouts <- bout_info(bike)
+
+vehicle <- get_bouts(datasets.all$activity, "Vehicle")
+vehicle.bouts <- bout_info(vehicle)
+
+activity.bouts <- rbind(still.bouts, foot.bouts, bike.bouts, vehicle.bouts)
+
+test<-melt(activity.bouts, id.vars = c("dates","bout","activity"), measure.vars = c("b.start","b.end"))
+plot_ly(test %>% group_by(dates, activity, bout),
         x = ~dates,
-        y = ~times,
-        color = ~confidence,
+        y = ~format(value, "%H%M"),
+        color = ~activity,
         type = "scatter",
         mode = "lines+markers")
+
+daily.summary <- activity.bouts %>% group_by(dates, activity) %>% 
+  summarise(total.time =  sum(duration), N = n()) %>%
+  mutate(mean.duration = total.time/N)
+
+plot_ly(daily.summary %>% group_by(activity),
+  x = ~dates,
+  y = ~total.time/60,
+  color = ~activity,
+  type = "bar") %>%
+  layout(barmode = "stack")
+
+totals <- daily.summary %>% group_by(dates) %>% summarise(day.total = sum(total.time))
+tmp <- merge(daily.summary, totals, by = "dates", all.x = TRUE)[,"day.total"]
+daily.summary %<>% ungroup() %>% mutate(day.total = tmp,
+                          act.percent = (total.time/tmp)*100)
+
+plot_ly(daily.summary %>% group_by(activity),
+        x = ~dates,
+        y = ~act.percent,
+        color = ~activity,
+        colors = c("purple","orange","grey","blue"),
+        type = "bar") %>%
+  layout(barmode = "stack")
+
+# plot_ly(foot %>% group_by(dates,bout) %>% filter(confidence>50),
+#         x = ~dates,
+#         y = ~times,
+#         color = ~confidence,
+#         type = "scatter",
+#         mode = "lines+markers")
 
 
 
