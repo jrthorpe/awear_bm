@@ -182,52 +182,60 @@ plot_ly(
 
 # ACTIVITY ===========================
 
+activity <- datasets.all$activity %>% filter(label %in% c("Still","Foot","Vehicle","Bicycle"))
+
+plot_ly(activity,
+        x = ~dates,
+        y = ~times,
+        color = ~label,
+        type = "scatter",
+        mode = "markers")
 
 
 #** Window method -------
 
+# samples are around 5 minutes apart, so 10 minute bins appropriate (?)
+win.size <- 10
+
+# get data in windows
+minute <- as.numeric(format(activity$timestamp, "%H"))*60 + as.numeric(format(activity$timestamp, "%M")) # minute since midnight
+activity.wins <- activity %>% 
+  mutate(window = ceiling(minute / win.size)) %>% 
+  group_by(dates, window) %>% count(label) %>% 
+  slice(which.max(n))
+
+activity.wins.alt <- activity %>% 
+  mutate(window = ceiling(minute / win.size)) %>% 
+  group_by(dates, window) %>% count(activity) %>% 
+  slice(which.max(n))
+
+plot_ly(
+  activity.wins.alt,
+  x = ~dates,
+  y = ~window,
+  z = ~activity,
+  type = "heatmap",
+  #colors = brewer.pal(4,"Set2")
+  colors = c("purple","yellow","grey")
+)
+
+#** Difftime method -------
 
 
-#** difftime method -------
+# separate data into separate streams each with own difftime
+# split each stream into bouts using a time threshold
 
-activity <- datasets.all$activity
-walk.sample <- activity %>% 
-  filter(dates==dates[3500],label=="Walking") %>% 
-  select(timestamp,label,confidence)
+foot <- datasets.all$activity %>% filter(label=="Foot") %>% select(timestamp, confidence, dates, times) %>%
+  mutate(dtime = c(0, difftime(tail(timestamp, -1), head(timestamp, -1), units = "mins"))) %>%
+  mutate(split = ifelse(dtime>10, 1, 0)) %>%
+  mutate(event = cumsum(split)+1)
 
-
-d.walk <- difftime(walk.sample$timestamp[-1],
-                   walk.sample$timestamp[1:(nrow(walk.sample)-1)],units="mins")
-
-walk.sample %<>% mutate(intervals = c(0,d.walk))
-
-plot_ly(walk.sample,
-        x=~timestamp,
-        y=~intervals,
+plot_ly(foot %>% group_by(dates,event) %>% filter(confidence>50),
+        x = ~dates,
+        y = ~times,
+        color = ~confidence,
         type = "scatter",
         mode = "lines+markers")
-
-
-plot_ly(activity %>% group_by(dates),
-        x=~dates,
-        y=~times,
-        color = ~as.factor(label),
-        type = "scatter",
-        mode = "markers")
-
-#
-
-
-min.series <- c(1:(24*60))
-win.series <- rep(1:288, each=5, times=1)
-cbind(min.series,ceiling((min.series/5)),win.series)
-
-
-
-
-
-#
-
 
 
 
