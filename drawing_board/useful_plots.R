@@ -123,7 +123,7 @@ plot_ly(data = bout_melt %>% filter(activity == "Still"),
             mode = "lines",
             opacity = 0.5,
             line = list(color = "green", width = 20),
-            name = "Vehicle")
+            name = "Vehicle")  
 
 # Bar chart with durations in different activities:
 
