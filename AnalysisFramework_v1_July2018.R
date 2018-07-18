@@ -200,34 +200,79 @@ win.size <- 10
 
 # get data in windows
 minute <- as.numeric(format(activity$timestamp, "%H"))*60 + as.numeric(format(activity$timestamp, "%M")) # minute since midnight
-activity.wins <- activity %>% 
-  mutate(window = ceiling(minute / win.size)) %>% 
-  group_by(dates, window) %>% count(activity) %>% #need to count activity instead of label for plot
-  slice(which.max(n))
+# activity.wins <- activity %>% 
+#   mutate(window = ceiling(minute / win.size)) %>% 
+#   group_by(dates, window) %>% count(activity) %>% #need to count activity instead of label for plot
+#   slice(which.max(n))
 
-activity.wins <- activity %>% 
+activity.w <- activity %>% 
   mutate(window = ceiling(minute / win.size)) %>% 
   group_by(dates, window)
 
-win.activities <- activity.wins %>% count(activity) %>% 
+win.activities <- activity.w %>% count(label,activity) %>% 
   slice(which.max(n))
 
-win.times <- activity.wins %>%
+win.times <- activity.w %>%
   slice(which.min(times))
 
 win.info <- merge(win.times %>% select(dates, times, timestamp, window),
       win.activities,
-      by = c("dates","window"))
+      by = c("dates","window")) %>%
+  mutate(bouts = get_events(activity))
+
+
+
+plot_ly(data = win.info %>% group_by(dates,bouts) %>% filter(label == "Still"),
+        x = ~times,
+        y = ~dates,
+        #colors = "grey",
+        type = "scatter",
+        mode = "lines",
+        line = list(color = "grey", width = 1)
+) %>%
+  add_trace(data = win.info %>% group_by(dates,bouts) %>% filter(label != "Still"),
+          x = ~times,
+          y = ~dates,
+          color = ~label,
+          colors = c("purple","yellow","green"),
+          type = "scatter",
+          mode = "lines+markers",
+          markers = list()
+          line = list(colors = c("purple","yellow","green"), width = 20),
+          inherit = F
+  ) 
 
 plot_ly(
-  win.info,
-  x = ~dates,
-  y = ~timestamp,
+  win.info %>% filter(dates==unique(dates)[3]),
+  x = ~times, # paste0((window*win.size)%/%60,":",(window*win.size)%%60)
+  y = ~format(dates,"%D"),
   z = ~activity,
   type = "heatmap",
   #colors = brewer.pal(4,"Set2")
   colors = c("purple","yellow","grey")
-)
+) 
+
+plot_ly(
+  win.info %>% filter(dates==unique(dates)[3]),
+  x = ~dates, # paste0((window*win.size)%/%60,":",(window*win.size)%%60)
+  y = ~bout,
+  color = ~label,
+  type = "bar"
+) %>% layout(barmode = "stack")
+
+# %>%
+#   layout(yaxis = a)
+# 
+# 
+# a <- list(
+#   #autotick = FALSE,
+#   ticks = "outside",
+#   #tick0 = 0,
+#   dtick = 10000000/6
+#   #ticklen = 5,
+#   #tickwidth = 2,
+#   #tickcolor = toRGB("blue")
+# )
 
 # %>%
 #   layout(yaxis = a)
@@ -252,13 +297,60 @@ vehicle.bouts <- bout_info(vehicle)
 
 activity.bouts <- rbind(still.bouts, foot.bouts, bike.bouts, vehicle.bouts)
 
-test<-melt(activity.bouts, id.vars = c("dates","bout","activity"), measure.vars = c("b.start","b.end"))
+test <- melt(activity.bouts, id.vars = c("dates","bout","activity"), 
+             measure.vars = c("b.start","b.end")) %>% 
+  group_by(dates, activity, bout)
+
 plot_ly(test %>% group_by(dates, activity, bout),
-        x = ~dates,
-        y = ~format(value, "%H%M"),
+        x = ~format(value, "%H:%M"),
+        y = ~dates,
         color = ~activity,
         type = "scatter",
-        mode = "lines+markers")
+        mode = "lines",
+        line = list(width = 20))
+
+plot_ly %>%
+  add_trace(data = test %>% filter(activity == "Still"),
+        x = ~value,
+        y = ~dates,
+        type = "scatter",
+        mode = "lines",
+        line = list(color = "grey", width = 20))
+
+plot_ly(data = test %>% filter(activity == "Still"),
+            x = ~format(value, "%H:%M"),
+            y = ~dates,
+            type = "scatter",
+            mode = "lines",
+            line = list(color = "grey", width = 2),
+        name = "Still") %>%
+  add_trace(data = test %>% filter(activity == "Foot"),
+            x = ~format(value, "%H:%M"),
+            y = ~dates,
+            type = "scatter",
+            mode = "lines",
+            opacity = 0.5,
+            line = list(color = "red", width = 20),
+            name = "On Foot") %>%
+  add_trace(data = test %>% filter(activity == "Bicycle"),
+            x = ~format(value, "%H:%M"),
+            y = ~dates,
+            type = "scatter",
+            mode = "lines",,
+            opacity = 0.5,
+            line = list(color = "blue", width = 20),
+            name = "Bicycle") %>%
+  add_trace(data = test %>% filter(activity == "Vehicle"),
+            x = ~format(value, "%H:%M"),
+            y = ~dates,
+            type = "scatter",
+            mode = "lines",,
+            opacity = 0.5,
+            line = list(color = "green", width = 20),
+            name = "Vehicle")
+
+
+
 
 daily.summary <- activity.bouts %>% group_by(dates, activity) %>% 
   summarise(total.time =  sum(duration), N = n()) %>%
