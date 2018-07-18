@@ -42,7 +42,7 @@ source("./Rscripts/users.R")
 # SETTINGS ==========================================
 
 # Select participant
-P <- participants$violet
+P <- participants$P08UH
 list2env(P, .GlobalEnv); remove(P)
 
 # Define constants:
@@ -183,205 +183,21 @@ plot_ly(
 
 # ACTIVITY ===========================
 
-activity <- datasets.all$activity %>% filter(label %in% c("Still","Foot","Vehicle","Bicycle"))
+acts <- c("Still","Foot","Vehicle","Bicycle")
+activity.log <- datasets.all$activity %>% filter(label %in% acts)
 
-plot_ly(activity,
-        x = ~dates,
-        y = ~times,
-        color = ~label,
-        type = "scatter",
-        mode = "markers")
+# To look at only "active" time of day
+# activity.log.day <- datasets.all$activity %>% filter(label %in% acts) %>%
+#   filter(times > as.POSIXct(x="06:00:00",format="%H:%M:%S",tz="CET"),
+#          times < as.POSIXct(x="22:00:00",format="%H:%M:%S",tz="CET"))
 
-
-#** Window method -------
-
-# samples are around 5 minutes apart, so 10 minute bins appropriate (?)
-win.size <- 10
-
-# get data in windows
-minute <- as.numeric(format(activity$timestamp, "%H"))*60 + as.numeric(format(activity$timestamp, "%M")) # minute since midnight
-# activity.wins <- activity %>% 
-#   mutate(window = ceiling(minute / win.size)) %>% 
-#   group_by(dates, window) %>% count(activity) %>% #need to count activity instead of label for plot
-#   slice(which.max(n))
-
-activity.w <- activity %>% 
-  mutate(window = ceiling(minute / win.size)) %>% 
-  group_by(dates, window)
-
-win.activities <- activity.w %>% count(label,activity) %>% 
-  slice(which.max(n))
-
-win.times <- activity.w %>%
-  slice(which.min(times))
-
-win.info <- merge(win.times %>% select(dates, times, timestamp, window),
-      win.activities,
-      by = c("dates","window")) %>%
-  mutate(bouts = get_events(activity))
-
-
-
-plot_ly(data = win.info %>% group_by(dates,bouts) %>% filter(label == "Still"),
-        x = ~times,
-        y = ~dates,
-        #colors = "grey",
-        type = "scatter",
-        mode = "lines",
-        line = list(color = "grey", width = 1)
-) %>%
-  add_trace(data = win.info %>% group_by(dates,bouts) %>% filter(label != "Still"),
-          x = ~times,
-          y = ~dates,
-          color = ~label,
-          colors = c("purple","yellow","green"),
-          type = "scatter",
-          mode = "lines+markers",
-          markers = list()
-          line = list(colors = c("purple","yellow","green"), width = 20),
-          inherit = F
-  ) 
-
-plot_ly(
-  win.info %>% filter(dates==unique(dates)[3]),
-  x = ~times, # paste0((window*win.size)%/%60,":",(window*win.size)%%60)
-  y = ~format(dates,"%D"),
-  z = ~activity,
-  type = "heatmap",
-  #colors = brewer.pal(4,"Set2")
-  colors = c("purple","yellow","grey")
-) 
-
-plot_ly(
-  win.info %>% filter(dates==unique(dates)[3]),
-  x = ~dates, # paste0((window*win.size)%/%60,":",(window*win.size)%%60)
-  y = ~bout,
-  color = ~label,
-  type = "bar"
-) %>% layout(barmode = "stack")
-
-# %>%
-#   layout(yaxis = a)
-# 
-# 
-# a <- list(
-#   #autotick = FALSE,
-#   ticks = "outside",
-#   #tick0 = 0,
-#   dtick = 10000000/6
-#   #ticklen = 5,
-#   #tickwidth = 2,
-#   #tickcolor = toRGB("blue")
-# )
-
-# %>%
-#   layout(yaxis = a)
-
-#** Difftime method -------
-
-
-# separate data into separate streams each with own difftime
-# split each stream into bouts using a time threshold
-
-still <- get_bouts(datasets.all$activity, "Still")
-still.bouts <- bout_info(still)
-
-foot <- get_bouts(datasets.all$activity, "Foot")
-foot.bouts <- bout_info(foot)
-
-bike <- get_bouts(datasets.all$activity, "Bicycle")
-bike.bouts <- bout_info(bike)
-
-vehicle <- get_bouts(datasets.all$activity, "Vehicle")
-vehicle.bouts <- bout_info(vehicle)
-
-activity.bouts <- rbind(still.bouts, foot.bouts, bike.bouts, vehicle.bouts)
-
-test <- melt(activity.bouts, id.vars = c("dates","bout","activity"), 
-             measure.vars = c("b.start","b.end")) %>% 
-  group_by(dates, activity, bout)
-
-plot_ly(test %>% group_by(dates, activity, bout),
-        x = ~format(value, "%H:%M"),
-        y = ~dates,
-        color = ~activity,
-        type = "scatter",
-        mode = "lines",
-        line = list(width = 20))
-
-plot_ly %>%
-  add_trace(data = test %>% filter(activity == "Still"),
-        x = ~value,
-        y = ~dates,
-        type = "scatter",
-        mode = "lines",
-        line = list(color = "grey", width = 20))
-
-plot_ly(data = test %>% filter(activity == "Still"),
-            x = ~format(value, "%H:%M"),
-            y = ~dates,
-            type = "scatter",
-            mode = "lines",
-            line = list(color = "grey", width = 2),
-        name = "Still") %>%
-  add_trace(data = test %>% filter(activity == "Foot"),
-            x = ~format(value, "%H:%M"),
-            y = ~dates,
-            type = "scatter",
-            mode = "lines",
-            opacity = 0.5,
-            line = list(color = "red", width = 20),
-            name = "On Foot") %>%
-  add_trace(data = test %>% filter(activity == "Bicycle"),
-            x = ~format(value, "%H:%M"),
-            y = ~dates,
-            type = "scatter",
-            mode = "lines",,
-            opacity = 0.5,
-            line = list(color = "blue", width = 20),
-            name = "Bicycle") %>%
-  add_trace(data = test %>% filter(activity == "Vehicle"),
-            x = ~format(value, "%H:%M"),
-            y = ~dates,
-            type = "scatter",
-            mode = "lines",,
-            opacity = 0.5,
-            line = list(color = "green", width = 20),
-            name = "Vehicle")
-
-
-
+activity.bouts <- activity_bouts(activity.log, acts)
 
 daily.summary <- activity.bouts %>% group_by(dates, activity) %>% 
   summarise(total.time =  sum(duration), N = n()) %>%
   mutate(mean.duration = total.time/N)
 
-plot_ly(daily.summary %>% group_by(activity),
-  x = ~dates,
-  y = ~total.time/60,
-  color = ~activity,
-  type = "bar") %>%
-  layout(barmode = "stack")
-
-totals <- daily.summary %>% group_by(dates) %>% summarise(day.total = sum(total.time))
-tmp <- merge(daily.summary, totals, by = "dates", all.x = TRUE)[,"day.total"]
-daily.summary %<>% ungroup() %>% mutate(day.total = tmp,
-                          act.percent = (total.time/tmp)*100)
-
-plot_ly(daily.summary %>% group_by(activity),
-        x = ~dates,
-        y = ~act.percent,
-        color = ~activity,
-        colors = c("purple","orange","grey","blue"),
-        type = "bar") %>%
-  layout(barmode = "stack")
-
-# plot_ly(foot %>% group_by(dates,bout) %>% filter(confidence>50),
-#         x = ~dates,
-#         y = ~times,
-#         color = ~confidence,
-#         type = "scatter",
-#         mode = "lines+markers")
+# used to have as percentage of recording time here (see commits 18 July 2018), but wasn't that meaningful due to overlapping bouts etc.
 
 
 
