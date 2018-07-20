@@ -244,7 +244,7 @@ summarise_trajectories <- function(gps.traj, dist.threshold) {
     summarize(T.start = timestamp[1], T.end = timestamp[length(timestamp)], 
               is.stay = median(is.stay), loc.id = mean(loc.id),
               clat = ifelse(is.stay, mean(lat), NA), clon = ifelse(is.stay, mean(lon), NA),    # stays centroids
-              action.range = max(homedist,na.rm=TRUE)# distance from home (furthest on move, average in stay)
+              action.range = max(homedist,na.rm=TRUE)# distance from home
     ) %>%
     mutate(T.end = c(T.start[-1],T.end[length(T.end)])) %>%
     mutate(durations = difftime(T.end,T.start, units = "mins")) %>%
@@ -283,23 +283,9 @@ get_metrics <- function(traj.summary) {
   tbl.N.places <- traj.summary %>% distinct(loc.id) %>% table(exclude = 0) # distinct locations by day excluding "moves"
   N.places <- data.frame(dates=rownames(tbl.N.places), n=rowSums(tbl.N.places),row.names = NULL) # total unique locations visited per day including home
   
-  # mobility boundary crossings based on the mobility baseline questionnaire:
-  # counts the number of times the person leaves a certain radius around their home
-  # levels: daily, 4-6 per week, 1-3 per week, less than 1
-  # TODO: fix this so it is not like every small trip at work is another additional trip out of town. -- done, only need in form TRUE/FALSE per day
-  N.boundary2 <- traj.summary %>% tally(action.range>20 & action.range<=50) # out into garden or postbox etc, not really detectable
-  N.boundary3 <- traj.summary %>% tally(action.range>50 & action.range<=1000) # neighborhood
-  N.boundary4 <- traj.summary %>% tally(action.range>1000 & action.range<=10000) # within town
-  N.boundary5 <- traj.summary %>% tally(action.range>10000) # out of town
-  
   metrics.results %<>% mutate(N.moves = N.moves$n,
                               N.stay.out = N.stay.out$n,
-                              N.places = N.places$n,
-                              mb50 = N.boundary2$n>0,
-                              mb1km = N.boundary3$n>0,
-                              #mb5km = N.boundary4a$n>0,
-                              mb10km = N.boundary4$n>0,
-                              mb.oot = N.boundary5$n>0)
+                              N.places = N.places$n)
   
   return(metrics.results)
 }

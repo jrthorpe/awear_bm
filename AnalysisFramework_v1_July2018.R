@@ -42,7 +42,7 @@ source("./Rscripts/users.R")
 # SETTINGS ==========================================
 
 # Select participant
-P <- participants$P08UH
+P <- participants$anthurium
 list2env(P, .GlobalEnv); remove(P)
 
 # Define constants:
@@ -52,7 +52,7 @@ not.in.use <- c("battery",
                 "experience_sampling",
                 #"activity",
                 #"step_count",
-                "location",
+                #"location",
                 "bluetooth","hardware_info","wifi","wearable","calllog","sms") #last row items never used
 # to_plot <- c("activity", # from data checker, for debugging purposes only (visualise all datasets)
 #              "battery",
@@ -102,7 +102,7 @@ gps.traj <- gps.log %>% group_by(dates) %>% do(get_trajectories(.,
                                                              T.stay = time.threshold.stay,
                                                              T.go = time.threshold.go,                                                             dist.threshold = dist.threshold))
 
-# **Prepare inputs -----
+# ** Prepare inputs -----
 
 # update home location based on all stays that are home (stay points close to current home estimation)
 home.updated <- update_home(df=gps.traj,home=home,dist.threshold = dist.threshold)
@@ -119,7 +119,7 @@ gps.traj %<>% ungroup(gps.traj) %>%
 traj.summary <- summarise_trajectories(gps.traj=gps.traj,
                                        dist.threshold=dist.threshold)
 
-# **Calculate all metrics by day -----
+# ** Calculate all metrics by day -----
 
 metrics.results <- get_metrics(traj.summary)
 
@@ -128,7 +128,7 @@ mcp.areas <- gps.traj  %>% group_by(dates) %>%
   summarise(mcp.area=get_mcp_area(lon=lon,lat=lat,Qd=Qd))                                  
 metrics.results %<>% mutate(mcp.area = mcp.areas$mcp.area) # TODO: create the possibility to get out the coords and plot for a visual check and for the paper (or other demo).
 
-# **Save Results ------
+# ** Save Results ------
 
 # # Saving output for plots etc:
 # nina.metrics <- metrics.results %>% select(dates, Tt.out, N.places) %>%
@@ -165,7 +165,7 @@ steps.totals <- merge(x=steps.watch %>% summarise(total = max(stepcounter)),
 
 #** Extraction walking bouts from step counts -------
 
-patterns <- pattern_steps(steps.phone %>% ungroup(), win.size = win.size)
+patterns <- pattern_steps(steps.watch %>% ungroup(), win.size = win.size)
 
 plot_ly(
   patterns[[2]],
@@ -183,7 +183,8 @@ plot_ly(
 
 # ACTIVITY ===========================
 
-acts <- c("Still","Foot","Vehicle","Bicycle")
+#** Extraction of activity bouts -------
+acts <- c("Still", "Foot", "Vehicle", "Bicycle")
 activity.log <- datasets.all$activity %>% filter(label %in% acts)
 
 # To look at only "active" time of day
@@ -199,17 +200,35 @@ daily.summary <- activity.bouts %>% group_by(dates, activity) %>%
 
 # used to have as percentage of recording time here (see commits 18 July 2018), but wasn't that meaningful due to overlapping bouts etc.
 
+#** Metrics to relate to questionnaire -------
+
+# Create one dataset out of stay/move events and activity bouts
+# plot stay/move as solid/dotted lines and overlay bike/foot/vehicle chart
 
 
 
+# Activity in daily life: stepcount as proxy
+# Activity in leisure: currently not possible, but with location detection or other more personalised approaches yes
+# Still time: get, but note in discussion the obvious limitations
+# Transport: get using above
 
 
+# RELATION TO QUESTIONNAIRES ----
 
+# mobility boundary crossings based on the mobility baseline questionnaire:
+# counts the number of times the person leaves a certain radius around their home
+# levels: daily, 4-6 per week, 1-3 per week, less than 1
+# TODO: fix this so it is not like every small trip at work is another additional trip out of town. -- done, only need in form TRUE/FALSE per day
+N.boundary2 <- traj.summary %>% tally(action.range>20 & action.range<=50) # out into garden or postbox etc, not really detectable
+N.boundary3 <- traj.summary %>% tally(action.range>50 & action.range<=1000) # neighborhood
+N.boundary4 <- traj.summary %>% tally(action.range>1000 & action.range<=10000) # within town
+N.boundary5 <- traj.summary %>% tally(action.range>10000) # out of town
 
-
-
-
-
+mb.results %<>% mutate(mb50 = N.boundary2$n>0,
+                            mb1km = N.boundary3$n>0,
+                            #mb5km = N.boundary4a$n>0,
+                            mb10km = N.boundary4$n>0,
+                            mb.oot = N.boundary5$n>0)
 
 
 
