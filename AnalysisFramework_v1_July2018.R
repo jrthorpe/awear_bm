@@ -219,16 +219,16 @@ daily.summary <- activity.bouts %>% group_by(dates, activity) %>%
 # counts the number of times the person leaves a certain radius around their home
 # levels: daily, 4-6 per week, 1-3 per week, less than 1
 # TODO: fix this so it is not like every small trip at work is another additional trip out of town. -- done, only need in form TRUE/FALSE per day
-N.boundary2 <- traj.summary %>% tally(action.range>20 & action.range<=50) # out into garden or postbox etc, not really detectable
-N.boundary3 <- traj.summary %>% tally(action.range>50 & action.range<=1000) # neighborhood
-N.boundary4 <- traj.summary %>% tally(action.range>1000 & action.range<=10000) # within town
-N.boundary5 <- traj.summary %>% tally(action.range>10000) # out of town
 
-mb.results %<>% mutate(mb50 = N.boundary2$n>0,
-                            mb1km = N.boundary3$n>0,
-                            #mb5km = N.boundary4a$n>0,
-                            mb10km = N.boundary4$n>0,
-                            mb.oot = N.boundary5$n>0)
+mobility.zones <- traj.summary %>%
+  mutate(zone = cut(action.range, breaks = c(0,25, 50, 1000, 10000,Inf), 
+                    labels = c("mz1", "mz2", "mz3", "mz4", "mz5"))) %>%
+  group_by(dates, zone) %>%
+  summarize(count = n())%>% 
+  ungroup() %>% mutate(dweek = (as.numeric(dates-dates[1])) %/% 7)
+ 
+LSA.sensor.results <- mobility.zones %>% group_by(dweek,zone) %>% tally(count>0) %>% 
+  complete(dweek,zone)
 
 
 
