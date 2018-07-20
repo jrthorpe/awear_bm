@@ -233,14 +233,53 @@ LSA.sensor.results <- mobility.zones %>% group_by(dweek,zone) %>% tally(count>0)
   complete(dweek,zone)
 
 # ** Transport Modes ----
-transport.modes <- daily.summary  %>% ungroup() %>% 
+
+# for bicycle and vehicle stay/move information not necessary:
+transport.modes <- daily.summary %>% ungroup() %>% 
   mutate(dweek = (as.numeric(dates-dates[1])) %/% 7) %>% 
   group_by(dweek, activity) %>% 
   summarise(days.per.week = sum(N>0),
             time.per.day = mean(total.time))
 
+# for "Foot" and "Still" bouts, need to filter any during moves:
+
+# get set of moves
+moves <- traj.summary %>% filter(!is.stay) %>% select(T.start,T.end,dates)
+
+# indicate whether activity bouts overlap with a move
+overlap_list = list()
+for(i in 1:nrow(activity.bouts)){
+  
+  overlap.test <- ((activity.bouts$b.start[i] > moves$T.start) &
+             (activity.bouts$b.start[i] < moves$T.end)) |
+    ((activity.bouts$b.end[i] > moves$T.start) &
+       (activity.bouts$b.end[i] < moves$T.end))
+  overlap_list[[i]] <- overlap.test
+}
+overlap.grid <- do.call("rbind", test_list)
+activity.bouts %<>% ungroup() %>% mutate(moving = rowSums(overlap.grid))
+
+# get a summary of "Foot" events that overlap with moves
+transport.foot <- activity.bouts %>% 
+  filter(activity=="Foot", moving==1)%>% 
+  group_by(dates) %>% 
+  summarise(total.time=sum(duration))
+
+transport.foot.weekly <- transport.foot %>% ungroup() %>% 
+  mutate(dweek = (as.numeric(dates-dates[1])) %/% 7) %>% 
+  group_by(dweek) %>% 
+  summarise(days.per.week = n(),
+            time.per.day = mean(total.time))
+
+# for interest, may be useful in future:
+activity.vs.moves <- activity.bouts %>% 
+  group_by(dates,activity,moving) %>% 
+  summarise(tt=sum(duration))
+
 # ** Still bouts ----
 # get from transport modes
+# TODO: need to exclude sleep time somehow. Options could be to take from period
+# between first and last step or screen touch.
 
 
 
