@@ -215,6 +215,8 @@ daily.summary <- activity.bouts %>% group_by(dates, activity) %>%
 
 # RELATION TO QUESTIONNAIRES ----
 
+
+# ** Mobility Zones ----
 # mobility boundary crossings based on the mobility baseline questionnaire:
 # counts the number of times the person leaves a certain radius around their home
 # levels: daily, 4-6 per week, 1-3 per week, less than 1
@@ -230,9 +232,15 @@ mobility.zones <- traj.summary %>%
 LSA.sensor.results <- mobility.zones %>% group_by(dweek,zone) %>% tally(count>0) %>% 
   complete(dweek,zone)
 
+# ** Transport Modes ----
+transport.modes <- daily.summary  %>% ungroup() %>% 
+  mutate(dweek = (as.numeric(dates-dates[1])) %/% 7) %>% 
+  group_by(dweek, activity) %>% 
+  summarise(days.per.week = sum(N>0),
+            time.per.day = mean(total.time))
 
-
-
+# ** Still bouts ----
+# get from transport modes
 
 
 
