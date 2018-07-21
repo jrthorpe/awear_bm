@@ -212,18 +212,8 @@ activity.bouts.pday <- activity.bouts %>% group_by(dates, activity) %>%
 
 # used to have as percentage of recording time here (see commits 18 July 2018), but wasn't that meaningful due to overlapping bouts etc.
 
-#** Metrics to relate to questionnaire -------
-
-# Create one dataset out of stay/move events and activity bouts
-# plot stay/move as solid/dotted lines and overlay bike/foot/vehicle chart
-
-
-
-# Activity in daily life: stepcount as proxy
-# Activity in leisure: currently not possible, but with location detection or other more personalised approaches yes
-# Still time: get, but note in discussion the obvious limitations
-# Transport: get using above
-
+remove(acts)
+# END
 
 # RELATION TO QUESTIONNAIRES ----
 
@@ -259,18 +249,7 @@ saveRDS(mobility.zones,paste0("M:/PhD_Folder/awear_bm/output_data/mobilityzones_
 # still > stays
 
 # indicate whether activity bouts overlap with a move
-moves <- traj.summary %>% filter(!is.stay) %>% select(T.start,T.end,dates) # get set of moves
-overlap_list = list()
-for(i in 1:nrow(activity.bouts)){
-  
-  overlap.test <- ((activity.bouts$b.start[i] > moves$T.start) &
-             (activity.bouts$b.start[i] < moves$T.end)) |
-    ((activity.bouts$b.end[i] > moves$T.start) &
-       (activity.bouts$b.end[i] < moves$T.end))
-  overlap_list[[i]] <- overlap.test
-}
-overlap.grid <- do.call("rbind", overlap_list)
-activity.moves <- activity.bouts %>% ungroup() %>% mutate(moving = rowSums(overlap.grid))
+activity.moves <- bout_moves(activity.bouts, traj.summary)
 
 # daily summary for activity bouts with stay/move information 
 activity.moves.pday <- activity.moves %>% 

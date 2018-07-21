@@ -42,8 +42,21 @@ bout_info <- function(bouts){
 
 
 
-bout_moves <- function(){
+bout_moves <- function(activity.bouts, traj.summary){
   # Append information about whether an activity bout overlaps a move.
+  #browser()
+  moves <- traj.summary %>% filter(!is.stay) %>% select(T.start,T.end,dates) # get set of moves
+  overlap_list = list()
+  for(i in 1:nrow(activity.bouts)){
+    
+    overlap.test <- ((activity.bouts$b.start[i] > moves$T.start) &
+                       (activity.bouts$b.start[i] < moves$T.end)) |
+      ((activity.bouts$b.end[i] > moves$T.start) &
+         (activity.bouts$b.end[i] < moves$T.end))
+    overlap_list[[i]] <- overlap.test
+  }
+  overlap.grid <- do.call("rbind", overlap_list)
+  activity.moves <- activity.bouts %>% ungroup() %>% mutate(moving = rowSums(overlap.grid))
   
-  return()
+  return(activity.moves)
 }
