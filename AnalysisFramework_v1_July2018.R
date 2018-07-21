@@ -26,6 +26,7 @@ library(sp)
 library(caTools)
 library(geosphere) # added in v3 of data checker
 library(mapview) # added in v1 of analysis framework
+library(tidyr) # added for function "complete" in assessments section
 
 # For DBSCAN clustering
 library(fpc)
@@ -42,7 +43,8 @@ source("./Rscripts/users.R")
 # SETTINGS ==========================================
 
 # Select participant
-P <- participants$anthurium
+p <- "P03JJ"
+P <- participants[[p]]
 list2env(P, .GlobalEnv); remove(P)
 
 # Define constants:
@@ -226,11 +228,18 @@ mobility.zones <- traj.summary %>%
   mutate(zone = cut(action.range, breaks = c(0,25, 50, 1000, 10000,Inf), 
                     labels = c("mz1", "mz2", "mz3", "mz4", "mz5"))) %>%
   group_by(dates, zone) %>%
-  summarize(count = n())%>% 
-  ungroup() %>% mutate(dweek = (as.numeric(dates-dates[1])) %/% 7)
- 
-LSA.sensor.results <- mobility.zones %>% group_by(dweek,zone) %>% tally(count>0) %>% 
-  complete(dweek,zone)
+  summarize(entry = n()>0)%>% 
+  ungroup() %>% 
+  dcast(dates~zone,value.var="entry") %>%
+  mutate(dweek = (as.numeric(dates-dates[1])) %/% 7)
+
+saveRDS(mobility.zones,paste0("M:/PhD_Folder/awear_bm/output_data/mobilityzones_",p,".Rds"))
+
+# not in use: moved to questionnaire compare script
+mobility.zones %>% group_by(dweek) %>% summarise(adherence = n())
+mobility.zones %>% group_by(dweek) %>% summarise_if(is.logical, funs(sum),na.rm=TRUE)
+
+#TODO: need to add adherence information
 
 # ** Transport Modes ----
 
@@ -256,7 +265,7 @@ for(i in 1:nrow(activity.bouts)){
        (activity.bouts$b.end[i] < moves$T.end))
   overlap_list[[i]] <- overlap.test
 }
-overlap.grid <- do.call("rbind", test_list)
+overlap.grid <- do.call("rbind", overlap_list)
 activity.bouts %<>% ungroup() %>% mutate(moving = rowSums(overlap.grid))
 
 # get a summary of "Foot" events that overlap with moves
@@ -281,7 +290,7 @@ activity.vs.moves <- activity.bouts %>%
 # TODO: need to exclude sleep time somehow. Options could be to take from period
 # between first and last step or screen touch.
 
-
+activity.assessments <- mobility_assessment %>% filter(assessment=="post")
 
 
 
