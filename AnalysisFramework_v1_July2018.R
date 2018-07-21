@@ -43,7 +43,7 @@ source("./Rscripts/users.R")
 # SETTINGS ==========================================
 
 # Select participant
-p <- "P06SS"
+p <- "P03JJ"
 P <- participants[[p]]
 list2env(P, .GlobalEnv); remove(P)
 
