@@ -39,3 +39,11 @@ bout_info <- function(bouts){
   
   return(bout.info)
 }
+
+
+
+bout_moves <- function(){
+  # Append information about whether an activity bout overlaps a move.
+  
+  return()
+}

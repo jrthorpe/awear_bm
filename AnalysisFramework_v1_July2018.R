@@ -43,7 +43,7 @@ source("./Rscripts/users.R")
 # SETTINGS ==========================================
 
 # Select participant
-p <- "P03JJ"
+p <- "P06SS"
 P <- participants[[p]]
 list2env(P, .GlobalEnv); remove(P)
 
@@ -102,16 +102,18 @@ gps.traj <- gps.log %>% group_by(dates) %>% do(get_trajectories(.,
                                                              dT = dT,
                                                              dD = dD,
                                                              T.stay = time.threshold.stay,
-                                                             T.go = time.threshold.go,                                                             dist.threshold = dist.threshold))
+                                                             T.go = time.threshold.go,
+                                                             dist.threshold = dist.threshold))
+remove(gps.log)
 
 # ** Prepare inputs -----
 
 # update home location based on all stays that are home (stay points close to current home estimation)
-home.updated <- update_home(df=gps.traj,home=home,dist.threshold = dist.threshold)
+home <- update_home(df=gps.traj,home=home,dist.threshold = dist.threshold)
  
 # add "distance to home" column for all points (in trajectories dataframe)
 gps.traj %<>% ungroup(gps.traj) %>%
-  mutate(homedist = distGeo(home.updated,
+  mutate(homedist = distGeo(home,
                             ungroup(gps.traj) %>% select(lon,lat),
                             a=6378137, f=1/298.257223563))
 
@@ -123,12 +125,12 @@ traj.summary <- summarise_trajectories(gps.traj=gps.traj,
 
 # ** Calculate all metrics by day -----
 
-metrics.results <- get_metrics(traj.summary)
+mob.metrics <- get_metrics(traj.summary)
 
 # minimum convex polygon(reference: http://mgritts.github.io/2016/04/02/homerange-mcp/)
 mcp.areas <- gps.traj  %>% group_by(dates) %>% 
   summarise(mcp.area=get_mcp_area(lon=lon,lat=lat,Qd=Qd))                                  
-metrics.results %<>% mutate(mcp.area = mcp.areas$mcp.area) # TODO: create the possibility to get out the coords and plot for a visual check and for the paper (or other demo).
+mob.metrics %<>% mutate(mcp.area = mcp.areas$mcp.area) # TODO: create the possibility to get out the coords and plot for a visual check and for the paper (or other demo).
 
 # ** Save Results ------
 
@@ -138,6 +140,10 @@ metrics.results %<>% mutate(mcp.area = mcp.areas$mcp.area) # TODO: create the po
 # saveRDS(nina.metrics,"M:/PhD_Folder/CaseStudies/Data_analysis/output/nina_metrics.Rds")
 
 # saveRDS(metrics.results,"M:/PhD_Folder/CaseStudies/Data_analysis/output/metrics_p03jj.Rds")
+
+# clear environment of variables not used further:
+remove(loc.accuracy, dT, dD, time.threshold.stay, time.threshold.go, dist.threshold, Qd,
+       mcp.areas)
 
 # END ---
 
@@ -167,19 +173,23 @@ steps.totals <- merge(x=steps.watch %>% summarise(total = max(stepcounter)),
 
 #** Extraction walking bouts from step counts -------
 
-patterns <- pattern_steps(steps.watch %>% ungroup(), win.size = win.size)
+# # probably won't be used besides to show that it is not feasible, since there
+# # are large gaps followed up large step count increases.
+# patterns <- pattern_steps(steps.watch %>% ungroup(), win.size = win.size)
+# 
+# plot_ly(
+#   patterns[[2]],
+#   x = ~ dates,
+#   y = ~ window,
+#   z = ~ steps.win,
+#   #zmin = 0,
+#   zmax = ~floor(quantile(steps.win, .99)),
+#   type = "heatmap",
+#   colorscale = "Greys"
+# )
 
-plot_ly(
-  patterns[[2]],
-  x = ~ dates,
-  y = ~ window,
-  z = ~ steps.win,
-  #zmin = 0,
-  zmax = ~floor(quantile(steps.win, .99)),
-  type = "heatmap",
-  colorscale = "Greys"
-)
-
+remove(win.size, steps.log,
+       steps.phone, steps.watch)
 # END
 
 
@@ -194,9 +204,9 @@ activity.log <- datasets.all$activity %>% filter(label %in% acts)
 #   filter(times > as.POSIXct(x="06:00:00",format="%H:%M:%S",tz="CET"),
 #          times < as.POSIXct(x="22:00:00",format="%H:%M:%S",tz="CET"))
 
-activity.bouts <- activity_bouts(activity.log, acts)
+activity.bouts <- activity_bouts(activity.log, acts); remove(activity.log)
 
-daily.summary <- activity.bouts %>% group_by(dates, activity) %>% 
+activity.bouts.pday <- activity.bouts %>% group_by(dates, activity) %>% 
   summarise(total.time =  sum(duration), N = n()) %>%
   mutate(mean.duration = total.time/N)
 
@@ -235,27 +245,21 @@ mobility.zones <- traj.summary %>%
 
 saveRDS(mobility.zones,paste0("M:/PhD_Folder/awear_bm/output_data/mobilityzones_",p,".Rds"))
 
-# not in use: moved to questionnaire compare script
-mobility.zones %>% group_by(dweek) %>% summarise(adherence = n())
-mobility.zones %>% group_by(dweek) %>% summarise_if(is.logical, funs(sum),na.rm=TRUE)
 
-#TODO: need to add adherence information
+# ** Activity Patterns/Levels ----
 
-# ** Transport Modes ----
+# Transport:
+# vehicle, bicycle, foot>moves: days/week
 
-# for bicycle and vehicle stay/move information not necessary:
-transport.modes <- daily.summary %>% ungroup() %>% 
-  mutate(dweek = (as.numeric(dates-dates[1])) %/% 7) %>% 
-  group_by(dweek, activity) %>% 
-  summarise(days.per.week = sum(N>0),
-            time.per.day = mean(total.time))
+# Active time (not for transport):
+# foot > stays+moves > hrs/day
+# step count?
 
-# for "Foot" and "Still" bouts, need to filter any during moves:
-
-# get set of moves
-moves <- traj.summary %>% filter(!is.stay) %>% select(T.start,T.end,dates)
+# sedentary bouts:
+# still > stays
 
 # indicate whether activity bouts overlap with a move
+moves <- traj.summary %>% filter(!is.stay) %>% select(T.start,T.end,dates) # get set of moves
 overlap_list = list()
 for(i in 1:nrow(activity.bouts)){
   
@@ -266,7 +270,26 @@ for(i in 1:nrow(activity.bouts)){
   overlap_list[[i]] <- overlap.test
 }
 overlap.grid <- do.call("rbind", overlap_list)
-activity.bouts %<>% ungroup() %>% mutate(moving = rowSums(overlap.grid))
+activity.moves <- activity.bouts %>% ungroup() %>% mutate(moving = rowSums(overlap.grid))
+
+# daily summary for activity bouts with stay/move information 
+activity.moves.pday <- activity.moves %>% 
+  group_by(dates, activity, moving) %>% 
+  summarise(total.time = sum(duration))
+
+saveRDS(activity.moves.pday,paste0("M:/PhD_Folder/awear_bm/output_data/activitymoves_",p,".Rds"))
+
+
+# Sections below currently not in use: keeping until the comparison with questionnaires is complete in separate script.
+
+# for bicycle and vehicle stay/move information not necessary:
+transport.modes <- daily.summary %>% ungroup() %>% 
+  mutate(dweek = (as.numeric(dates-dates[1])) %/% 7) %>% 
+  group_by(dweek, activity) %>% 
+  summarise(days.per.week = sum(N>0),
+            time.per.day = mean(total.time))
+
+# for "Foot" and "Still" bouts, need to filter any during moves:
 
 # get a summary of "Foot" events that overlap with moves
 transport.foot <- activity.bouts %>% 
@@ -289,9 +312,6 @@ activity.vs.moves <- activity.bouts %>%
 # get from transport modes
 # TODO: need to exclude sleep time somehow. Options could be to take from period
 # between first and last step or screen touch.
-
-activity.assessments <- mobility_assessment %>% filter(assessment=="post")
-
 
 
 
