@@ -1,12 +1,34 @@
-# Mobility Boundaries compared to Questionnaire:
+# Activity results compared to Questionnaire:
 
-# load mobility metrics...
+# ** Load questionnaire results ----
+# First time imported from excel, edited and saved, thereafter loaded from "output" folder.
+
+# / Activity
+# act.assessments <- activity.assessments %>% filter(assessment == "post") %>% select(-assessment)
+# remove(activity.assessments)
+# saveRDS(act.assessments,"./output_data/activity_assessments_post.Rds")
+act.assessments <- readRDS("./output_data/mobility_assessments_post.Rds")
+
+# / Mobility
 # mb.assessments <- mobility_assessment %>% filter(assessment == "post") %>% select(-assessment)
 # remove(mobility_assessment)
-# saveRDS(mb.assessments,"M:/PhD_Folder/CaseStudies/Data_analysis/output/mobility_assessments_post.Rds")
-mb.assessments <- readRDS("M:/PhD_Folder/CaseStudies/Data_analysis/output/mobility_assessments_post.Rds")
+# saveRDS(mb.assessments,"./output_data/mobility_assessments_post.Rds")
+mb.assessments <- readRDS("./output_data/mobility_assessments_post.Rds")
 
 
+# ** Load sensor data results ----
+
+
+
+# Mobility Boundaries compared to Questionnaire:
+
+
+# Load questionnaire results:
+# First time imported from excel, edited and saved. Thereafter loaded from output folder.
+
+
+
+# Load sensor data results:
 metrics.results.p13 <- readRDS("M:/PhD_Folder/CaseStudies/Data_analysis/output/metrics_p13nb.Rds")
 metrics.results.p10 <- readRDS("M:/PhD_Folder/CaseStudies/Data_analysis/output/metrics_p10jl.Rds")
 metrics.results.p08 <- readRDS("M:/PhD_Folder/CaseStudies/Data_analysis/output/metrics_p08uh.Rds")
