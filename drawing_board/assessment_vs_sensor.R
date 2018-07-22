@@ -85,4 +85,68 @@ remove(mz.compare,mz.dat,mz.toplot,mz.weekly,q.post)
 
 # ** Activity results ----
 
+# Plot A1: transport modes days per week
+tmp <- act.list[["P03JJ"]]
+sensor.transport <- tmp  %>% ungroup() %>% filter((activity=="Foot" & moving==1) |
+                                  activity=="Vehicle" | 
+                                  activity=="Bicycle") %>%
+  dcast(dates~activity, value.var="total.time",
+        fun.aggregate=sum) %>% # sum where there is total.time for both move & stay (applies to vehicle and bicycle)
+  mutate_if(is.numeric,as.logical) %>%  # convert total.time to logical indicator for if mode used that day
+  mutate(dweek = (as.numeric(dates-dates[1])) %/% 7) %>% group_by(dweek) %>%
+  summarise_at(vars(Foot,Bicycle,Vehicle), sum, na.rm = TRUE)
+
+
+q.post.act <- act.assessments %>% filter(participant == "P03JJ") %>% 
+  mutate(vehicle.days = sum(car.days, dot.days)) %>%
+  select(foot.days, bike.days, vehicle.days)
+colnames(q.post.act) <- c("Vehicle", "Bicycle", "Foot")
+
+# # option A: stacked bar style
+# transport.compare <- rbind(sensor = t(data.frame(colMeans(sensor.transport[10:14,2:4]))),
+#                            survey = q.post.act)
+# transport.compare  %<>% mutate(source = rownames(transport.compare))
+# 
+# plot_ly(transport.compare, x = ~source, y = ~Foot, type = "bar") %>%
+#   add_trace(y = ~Bicycle) %>%
+#   add_trace(y = ~Vehicle) %>%
+#   layout(barmode = "stack")
+
+# option B: grouped bar style
+remove(transport.compare); transport.compare <- rbind(sensor = t(data.frame(colMeans(sensor.transport[10:14,2:4]))),
+                           survey = q.post.act) %>% t() %>% data.frame()
+transport.compare  %<>% mutate(mode = rownames(transport.compare))
+
+plot_ly(transport.compare, x = ~mode, y = ~sensor, type = "bar", name="sensor") %>%
+  add_trace(y = ~survey, name="survey") %>%
+  layout(barmode = "group")
+
+
+# Currently not in use, gets the data in another format:
+# transport.compare <- merge(data.frame(colMeans(sensor.transport[10:14,2:4])),
+#                            t(q.post.act),
+#                            by="row.names",all.x=TRUE)
+# colnames(transport.compare) <- c("Mode", "Sensor", "Survey")
+# 
+# transport.compare.toplot <- melt(transport.compare,
+#                                  id.vars = "Mode", 
+#                                  variable.name = "source", value.name = "days")
+
+
+# TODO: adherence step from mz doesn't work here because they don't go out as
+# much. Need to get adherence information "globally" (e.g. from screen touch)
+# and apply to all tests.
+
+
+
+
+# Plot A2: active hrs/day by stay/move
+
+
+
+
+
+# Plot A3: still time hrs/day by (stay only)
+
+
 
