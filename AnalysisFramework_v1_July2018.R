@@ -38,39 +38,14 @@ source("./Rscripts/jrt_utils.R")
 source("./Rscripts/jrt_mobility.R")
 source("./Rscripts/jrt_steps.R")
 source("./Rscripts/jrt_activity.R")
-source("./Rscripts/users.R")
 
 # SETTINGS ==========================================
 
 # Select participant
-p <- "P03JJ"
-P <- participants[[p]]
-list2env(P, .GlobalEnv); remove(P)
+p <- "P13NB"
+p.codes <- c("P03JJ","P06SS","P07MG","P08UH","P10JL","P13NB")
 
-# Define constants:
-folder <- "M:/PhD_Folder/CaseStudies/Data_dumps/dump_current_analysis/" # path to folder that holds multiple .csv files, downloaded from nightingale webportal
-not.in.use <- c("battery", 
-                "screen",
-                "experience_sampling",
-                #"activity",
-                #"step_count",
-                #"location",
-                "bluetooth","hardware_info","wifi","wearable","calllog","sms") #last row items never used
-# to_plot <- c("activity", # from data checker, for debugging purposes only (visualise all datasets)
-#              "battery",
-#              "exps",
-#              "location",
-#              "screen",
-#              "steps")
-d.study <- as.numeric(round(difftime(d.stop,d.start,units="days")))
-
-# IMPORT AND RESTRUCTURE DATA ------------------------
-
-datasets.all <- get.data(folder, not.in.use) %>% 
-  lapply(restructure, userid, d.start, d.stop)
-datasets.all <- Filter(function(x) !is.null(x)[1],datasets.all) # remove any null dataframes
-
-remove(folder, not.in.use, userid)
+datasets.all <- readRDS(paste0("M:/PhD_Folder/awear_bm/output_data/datasets_",p,".Rds"))
 
 # MOBILITY  ==========================================
 
@@ -165,11 +140,14 @@ steps.log <- datasets.all$step_count %>%
 steps.watch <- daily_steps(steps.log,"watch")
 steps.phone <- daily_steps(steps.log,"phone")
 
-# daily totals #TODO:fix the merge
+# daily totals #TODO:fix the merge-- fixed with all.x and all.y, not tested really yet.
 steps.totals <- merge(x=steps.watch %>% summarise(total = max(stepcounter)), 
                       y=steps.phone %>% summarise(total = max(stepcounter)),
-                      by="dates", suffixes=c(".watch",".phone"),
+                      by="dates", suffixes=c(".watch",".phone"), 
+                      all.x = TRUE, all.y = TRUE,
                       incomparables = NA)
+saveRDS(steps.totals,paste0("M:/PhD_Folder/awear_bm/output_data/steps_",p,".Rds"))
+
 
 #** Extraction walking bouts from step counts -------
 
@@ -259,33 +237,34 @@ activity.moves.pday <- activity.moves %>%
 saveRDS(activity.moves.pday,paste0("M:/PhD_Folder/awear_bm/output_data/activitymoves_",p,".Rds"))
 
 
-# Sections below currently not in use: keeping until the comparison with questionnaires is complete in separate script.
-
-# for bicycle and vehicle stay/move information not necessary:
-transport.modes <- daily.summary %>% ungroup() %>% 
-  mutate(dweek = (as.numeric(dates-dates[1])) %/% 7) %>% 
-  group_by(dweek, activity) %>% 
-  summarise(days.per.week = sum(N>0),
-            time.per.day = mean(total.time))
-
-# for "Foot" and "Still" bouts, need to filter any during moves:
-
-# get a summary of "Foot" events that overlap with moves
-transport.foot <- activity.bouts %>% 
-  filter(activity=="Foot", moving==1)%>% 
-  group_by(dates) %>% 
-  summarise(total.time=sum(duration))
-
-transport.foot.weekly <- transport.foot %>% ungroup() %>% 
-  mutate(dweek = (as.numeric(dates-dates[1])) %/% 7) %>% 
-  group_by(dweek) %>% 
-  summarise(days.per.week = n(),
-            time.per.day = mean(total.time))
-
-# for interest, may be useful in future:
-activity.vs.moves <- activity.bouts %>% 
-  group_by(dates,activity,moving) %>% 
-  summarise(tt=sum(duration))
+# 
+# # Sections below currently not in use: keeping until the comparison with questionnaires is complete in separate script.
+# 
+# # for bicycle and vehicle stay/move information not necessary:
+# transport.modes <- daily.summary %>% ungroup() %>% 
+#   mutate(dweek = (as.numeric(dates-dates[1])) %/% 7) %>% 
+#   group_by(dweek, activity) %>% 
+#   summarise(days.per.week = sum(N>0),
+#             time.per.day = mean(total.time))
+# 
+# # for "Foot" and "Still" bouts, need to filter any during moves:
+# 
+# # get a summary of "Foot" events that overlap with moves
+# transport.foot <- activity.bouts %>% 
+#   filter(activity=="Foot", moving==1)%>% 
+#   group_by(dates) %>% 
+#   summarise(total.time=sum(duration))
+# 
+# transport.foot.weekly <- transport.foot %>% ungroup() %>% 
+#   mutate(dweek = (as.numeric(dates-dates[1])) %/% 7) %>% 
+#   group_by(dweek) %>% 
+#   summarise(days.per.week = n(),
+#             time.per.day = mean(total.time))
+# 
+# # for interest, may be useful in future:
+# activity.vs.moves <- activity.bouts %>% 
+#   group_by(dates,activity,moving) %>% 
+#   summarise(tt=sum(duration))
 
 # ** Still bouts ----
 # get from transport modes
