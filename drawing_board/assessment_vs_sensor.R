@@ -86,7 +86,7 @@ remove(mz.compare,mz.dat,mz.toplot,mz.weekly,q.post)
 # ** Activity results ----
 
 # survey results:
-activity.results <- act.assessments %>% mutate(vehicle.days = sum(car.days,dot.days),
+activity.results <- act.assessments %>% mutate(vehicle.days = car.days+dot.days,
                             source = "survey") %>%
   select(participant,
          active.work.days,
@@ -138,7 +138,7 @@ for(p in p.codes){
   
   # Create a dataframe of one row matching the variables in the assessment, and append.
   current <- data.frame(
-    participant = p.code,
+    participant = p,
     active.work.days = mean(sensor.active.days$active.days),
     active.work.mpd = sensor.active.mpd %>% filter(moving==0) %>% select(mpd) %>% as.numeric(),
     active.sport.days = NA,
@@ -158,100 +158,31 @@ for(p in p.codes){
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # Plot A1: transport modes days per week
 
-sensor.transport <- tmp  %>% ungroup() %>% filter((activity=="Foot" & moving==1) |
-                                  activity=="Vehicle" | 
-                                  activity=="Bicycle") %>%
-  dcast(dates~activity, value.var="total.time",
-        fun.aggregate=sum) %>% # sum where there is total.time for both move & stay (applies to vehicle and bicycle)
-  mutate_if(is.numeric,as.logical) %>%  # convert total.time to logical indicator for if mode used that day
-  mutate(dweek = (as.numeric(dates-dates[1])) %/% 7) %>% group_by(dweek) %>%
-  summarise_at(vars(Foot,Bicycle,Vehicle), sum, na.rm = TRUE)
-
-sensor.transport.days <- sensor.transport %>% filter(dweek %in% c(10:14)) %>%
-  summarise_at(vars(Foot,Bicycle,Vehicle), mean, na.rm = TRUE)
-
-
-q.post.act <- act.assessments %>% filter(participant == "P03JJ") %>% 
-  mutate(vehicle.days = sum(car.days, dot.days)) %>%
-  select(foot.days, bike.days, vehicle.days)
-colnames(q.post.act) <- c("Vehicle", "Bicycle", "Foot")
-
-# # option A: stacked bar style
-# transport.compare <- rbind(sensor = t(data.frame(colMeans(sensor.transport[10:14,2:4]))),
-#                            survey = q.post.act)
-# transport.compare  %<>% mutate(source = rownames(transport.compare))
-# 
-# plot_ly(transport.compare, x = ~source, y = ~Foot, type = "bar") %>%
-#   add_trace(y = ~Bicycle) %>%
-#   add_trace(y = ~Vehicle) %>%
-#   layout(barmode = "stack")
-# remove(transport.compare); 
+td.plot_list = list()
+for(p in p.codes){
+  
+  transport.days <- activity.results %>% filter(participant==p) %>% 
+    select(vehicle.days, bike.days, foot.days, source) %>%
+    melt(id.vars="source", variable.name = "mode")
+  
+  
+  td.plot <- plot_ly(transport.days %>% group_by(source), 
+                     x = ~mode, 
+                     y = ~value,
+                     color = ~source,
+                     colors = c("blue","orange"),
+                     type = "bar",
+                     legendgroup = ~source, 
+                     showlegend=ifelse(p=="P03JJ",TRUE,FALSE))
+  
+  td.plot_list[[p]] <- td.plot
+  
+}
+subplot(td.plot_list, nrows = 2, margin=0.08) # for 2 columns use ceiling(i/2)
 
 
-# option B: grouped bar style
-transport.compare <- rbind(sensor = t(data.frame(colMeans(sensor.transport[10:14,2:4]))),
-                           survey = q.post.act) %>% t() %>% data.frame()
-transport.compare  %<>% mutate(mode = rownames(transport.compare))
-
-plot_ly(transport.compare, x = ~mode, y = ~sensor, type = "bar", name="sensor") %>%
-  add_trace(y = ~survey, name="survey") %>%
-  layout(barmode = "group")
-
-
-
-# don't need per week, its an average time per day
-# %>% group_by(dweek, moving) %>%
-#   summarise(mpd=mean(total.time))
-
-
-
-
-
-
-
-
-
-
-
-
-# Currently not in use, gets the data in another format:
-# transport.compare <- merge(data.frame(colMeans(sensor.transport[10:14,2:4])),
-#                            t(q.post.act),
-#                            by="row.names",all.x=TRUE)
-# colnames(transport.compare) <- c("Mode", "Sensor", "Survey")
-# 
-# transport.compare.toplot <- melt(transport.compare,
-#                                  id.vars = "Mode", 
-#                                  variable.name = "source", value.name = "days")
 
 
 # TODO: adherence step from mz doesn't work here because they don't go out as

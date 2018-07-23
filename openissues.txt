@@ -39,3 +39,7 @@ Activity // Patterns
 Recognised activity bouts are quite sparse in the pilot studies. It could be due to aggressive preprocessing, might be worth considering alternative approaches, eg:
 - first remove all the "unkown/titing" data and then keep max, to ensure that an event of interest is prioritised over the others.
 - filter all results with confidence < threshold (e.g. 50%) instead of keeping only max. 
+
+ISSUE 9:
+Activity // Sensor compare / plots
+Need to adjust variable names so that it looks right in the plot. Also need to figure out how to have individual titles. 
