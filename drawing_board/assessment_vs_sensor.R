@@ -85,8 +85,108 @@ remove(mz.compare,mz.dat,mz.toplot,mz.weekly,q.post)
 
 # ** Activity results ----
 
+# survey results:
+activity.results <- act.assessments %>% mutate(vehicle.days = sum(car.days,dot.days),
+                            source = "survey") %>%
+  select(participant,
+         active.work.days,
+         active.work.mpd,
+         active.sport.days,
+         active.sport.mpd,
+         still.mpd,
+         vehicle.days,
+         bike.days,
+         foot.days,
+         bike.mpd,
+         foot.mpd,
+         source)
+
+
+# sensor results:
+for(p in p.codes){
+  
+  #p.code <- "P03JJ" #p.codes[i] # get participant code
+  tmp <- act.list[[p]]
+  
+  sensor.active <- tmp %>% ungroup() %>% filter(activity=="Foot") %>%
+    select(dates, activity, total.time, moving) %>%
+    mutate(dweek = (as.numeric(dates-dates[1])) %/% 7) %>%
+    filter(dweek %in% c(10:14)) 
+  
+  sensor.active.days <- sensor.active %>%
+    filter(moving==0) %>%
+    group_by(dweek) %>%
+    summarise(active.days = n())
+  
+  sensor.active.mpd <- sensor.active %>%
+    group_by(moving) %>%
+    summarise(mpd=mean(total.time))
+  
+  # sensor.still ...
+  
+  sensor.transport <- tmp  %>% ungroup() %>% filter((activity=="Foot" & moving==1) |
+                                                      activity=="Vehicle" | 
+                                                      activity=="Bicycle") %>%
+    dcast(dates~activity, value.var="total.time",
+          fun.aggregate=sum) %>% # sum where there is total.time for both move & stay (applies to vehicle and bicycle)
+    mutate_if(is.numeric,as.logical) %>%  # convert total.time to logical indicator for if mode used that day
+    mutate(dweek = (as.numeric(dates-dates[1])) %/% 7) %>% group_by(dweek) %>%
+    summarise_at(vars(Foot,Bicycle,Vehicle), sum, na.rm = TRUE)
+  
+  sensor.transport.days <- sensor.transport %>% filter(dweek %in% c(10:14)) %>%
+    summarise_at(vars(Foot,Bicycle,Vehicle), mean, na.rm = TRUE)
+  
+  # Create a dataframe of one row matching the variables in the assessment, and append.
+  current <- data.frame(
+    participant = p.code,
+    active.work.days = mean(sensor.active.days$active.days),
+    active.work.mpd = sensor.active.mpd %>% filter(moving==0) %>% select(mpd) %>% as.numeric(),
+    active.sport.days = NA,
+    active.sport.mpd = NA,
+    still.mpd = "TBC",
+    vehicle.days = sensor.transport.days$Vehicle,
+    bike.days = sensor.transport.days$Bicycle,
+    foot.days = sensor.transport.days$Foot,
+    bike.mpd = NA,
+    foot.mpd = sensor.active.mpd %>% filter(moving==1) %>% select(mpd) %>% as.numeric(),
+    source = "sensor"
+  )
+  
+  activity.results <- rbind(activity.results, current)
+  
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # Plot A1: transport modes days per week
-tmp <- act.list[["P03JJ"]]
+
 sensor.transport <- tmp  %>% ungroup() %>% filter((activity=="Foot" & moving==1) |
                                   activity=="Vehicle" | 
                                   activity=="Bicycle") %>%
@@ -95,6 +195,9 @@ sensor.transport <- tmp  %>% ungroup() %>% filter((activity=="Foot" & moving==1)
   mutate_if(is.numeric,as.logical) %>%  # convert total.time to logical indicator for if mode used that day
   mutate(dweek = (as.numeric(dates-dates[1])) %/% 7) %>% group_by(dweek) %>%
   summarise_at(vars(Foot,Bicycle,Vehicle), sum, na.rm = TRUE)
+
+sensor.transport.days <- sensor.transport %>% filter(dweek %in% c(10:14)) %>%
+  summarise_at(vars(Foot,Bicycle,Vehicle), mean, na.rm = TRUE)
 
 
 q.post.act <- act.assessments %>% filter(participant == "P03JJ") %>% 
@@ -111,15 +214,33 @@ colnames(q.post.act) <- c("Vehicle", "Bicycle", "Foot")
 #   add_trace(y = ~Bicycle) %>%
 #   add_trace(y = ~Vehicle) %>%
 #   layout(barmode = "stack")
+# remove(transport.compare); 
+
 
 # option B: grouped bar style
-remove(transport.compare); transport.compare <- rbind(sensor = t(data.frame(colMeans(sensor.transport[10:14,2:4]))),
+transport.compare <- rbind(sensor = t(data.frame(colMeans(sensor.transport[10:14,2:4]))),
                            survey = q.post.act) %>% t() %>% data.frame()
 transport.compare  %<>% mutate(mode = rownames(transport.compare))
 
 plot_ly(transport.compare, x = ~mode, y = ~sensor, type = "bar", name="sensor") %>%
   add_trace(y = ~survey, name="survey") %>%
   layout(barmode = "group")
+
+
+
+# don't need per week, its an average time per day
+# %>% group_by(dweek, moving) %>%
+#   summarise(mpd=mean(total.time))
+
+
+
+
+
+
+
+
+
+
 
 
 # Currently not in use, gets the data in another format:
