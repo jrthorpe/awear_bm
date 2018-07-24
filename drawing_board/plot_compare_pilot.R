@@ -21,6 +21,11 @@ traj.algorithm <- rbind.data.frame(readRDS("M:/PhD_Folder/awear_bm/output_data/t
                                    )
 attributes(traj.algorithm$T.end) <- attributes(traj.algorithm$T.start) #otherwise different from T.start (no clue why), which causes problems when merged
 
+act.algorithm <- rbind.data.frame(readRDS("M:/PhD_Folder/awear_bm/output_data/activity_daisy.Rds"),
+                                   readRDS("M:/PhD_Folder/awear_bm/output_data/activity_violet.Rds"),
+                                   #readRDS("M:/PhD_Folder/awear_bm/output_data/activity_nasturtium.Rds"), # still need Nina's logsheets updated
+                                   readRDS("M:/PhD_Folder/awear_bm/output_data/activity_agapantha.Rds"),
+                                   readRDS("M:/PhD_Folder/awear_bm/output_data/activity_anthurium.Rds")) %>% ungroup()
 
 # Logsheet results:
 traj.logsheets <- read_excel(paste("M:/PhD_Folder/Pilot2018/AWEAR_Logsheet_Testing/logsheets_combined.xlsx",sep=""),col_names = TRUE,
@@ -41,13 +46,14 @@ p.code <- "violet"
 
 traj.logsheets.p <- traj.logsheets %>% filter(participant==p.code)
 traj.algorithm.p <- traj.algorithm %>% filter(participant==p.code)
+act.algorithm.p <- act.algorithm %>% filter(participant==p.code)
 
 period <- unique(traj.algorithm.p$dates)[unique(traj.algorithm.p$dates) %in% unique(traj.logsheets.p$dates)]
 
 plotlist <- list()
 
 for(i in 1:length(period)){
-  
+  i<-2
   # Logsheet data: select date and manipulate dataset to get into useful format
   d <- period[i] 
   log.data <- traj.logsheets.p %>% filter(dates==d) %>%
@@ -67,7 +73,7 @@ for(i in 1:length(period)){
     melt(id.vars=c("dates", "StayGo", "event"), value.name = "Time")
   
   # Create plot of results
-  tmp <- plot_ly(data = log.data %>% arrange(event,Time),
+  tmp.traj <- plot_ly(data = log.data %>% arrange(event,Time),
         x=~Time,
         y=~StayGo,
         type = "scatter",
@@ -78,23 +84,109 @@ for(i in 1:length(period)){
             x=~Time,
             y=~StayGo,
             line = list(dash = "dot",color = "blue"),
-            name = "Algorithm results")
+            name = "Algorithm results") 
   
-  plotlist[[i]] <- tmp
+  # Activity ----
+  #d <- act.algorithm.p$dates[1] #temp, while developing
+  act.data <- act.algorithm.p %>% filter(dates==d) %>%
+  melt(id.vars = c("dates","bout","activity"), 
+                    measure.vars = c("b.start","b.end")) %>% 
+    group_by(activity, bout) %>%
+    mutate(StayGo = "Activity") #for same plot option below
+  
+  tmp.act <- plot_ly(data = act.data %>% filter(activity == "Still"),
+          x = ~value, #NOTE: this does not display the time properly, irregular intervals are spread regularly
+          y = ~dates,
+          type = "scatter",
+          mode = "lines",
+          line = list(color = "grey", width = 2),
+          name = "Still") %>%
+    add_trace(data = act.data %>% filter(activity == "Foot"),
+              x = ~value,
+              y = ~dates,
+              type = "scatter",
+              mode = "lines",
+              opacity = 0.5,
+              line = list(color = "red", width = 20),
+              name = "On Foot") %>%
+    add_trace(data = act.data %>% filter(activity == "Bicycle"),
+              x = ~value,
+              y = ~dates,
+              type = "scatter",
+              mode = "lines",
+              opacity = 0.5,
+              line = list(color = "blue", width = 20),
+              name = "Bicycle") %>%
+    add_trace(data = act.data %>% filter(activity == "Vehicle"),
+              x = ~value,
+              y = ~dates,
+              type = "scatter",
+              mode = "lines",
+              opacity = 0.5,
+              line = list(color = "green", width = 20),
+              name = "Vehicle")
+  
+  subplot(tmp.traj,tmp.act, nrows=2, shareX = TRUE)
+  
+  # Plot both on same axes instead of subplot:
+  # Create plot of results
+  tmp.combo <- plot_ly(data = log.data %>% arrange(event,Time),
+                      x=~Time,
+                      y=~StayGo,
+                      type = "scatter",
+                      mode = "lines",
+                      line = list(color = "red"),
+                      name = "Logsheet results") %>%
+    add_trace(data = alg.data %>% arrange(event,Time),
+              x=~Time,
+              y=~StayGo,
+              line = list(dash = "dot",color = "blue"),
+              name = "Algorithm results") %>%
+    add_trace(data = act.data %>% filter(activity == "Still"),
+              x = ~value, #NOTE: this does not display the time properly, irregular intervals are spread regularly
+              #y = ~dates,
+              type = "scatter",
+              mode = "lines",
+              line = list(color = "grey", width = 2),
+              name = "Still") %>%
+    add_trace(data = act.data %>% filter(activity == "Foot"),
+              x = ~value,
+              #y = ~dates,
+              type = "scatter",
+              mode = "lines",
+              opacity = 0.5,
+              line = list(color = "red", width = 20),
+              name = "On Foot") %>%
+    add_trace(data = act.data %>% filter(activity == "Bicycle"),
+              x = ~value,
+              #y = ~dates,
+              type = "scatter",
+              mode = "lines",
+              opacity = 0.5,
+              line = list(color = "blue", width = 20),
+              name = "Bicycle") %>%
+    add_trace(data = act.data %>% filter(activity == "Vehicle"),
+              x = ~value,
+              #y = ~dates,
+              type = "scatter",
+              mode = "lines",
+              opacity = 0.5,
+              line = list(color = "green", width = 20),
+              name = "Vehicle")
+  
+  plotlist[[i]] <- tmp.combo
+  
 }
 
 subplot(plotlist, nrows = length(period))
 
 
-
-
-
-
-
-
-
-
 # ACTIVITY BOUTS ----
+
+
+
+
+
 
 
 

@@ -43,15 +43,15 @@ source("./Rscripts/users.R")
 # SETTINGS ==========================================
 
 # Select participant and load data
-#p <- "anthurium" # single participant
+p <- "anthurium" # single participant
 #p.codes <- c("P03JJ","P06SS","P07MG","P08UH","P10JL","P13NB") # case studies
-p.codes <- c("daisy","violet","agapantha","anthurium","nasturtium") # pilot
-for(p in p.codes){
+#p.codes <- c("daisy","violet","agapantha","anthurium","nasturtium") # pilot
+#for(p in p.codes){
   P <- participants[[p]]
   list2env(P, .GlobalEnv); remove(P)
   d.study <- as.numeric(round(difftime(d.stop,d.start,units="days")))
   datasets.all <- readRDS(paste0("M:/PhD_Folder/awear_bm/output_data/datasets_",p,".Rds"))
-
+  
 # MOBILITY  ==========================================
 
 #** Moblity Setup: create datasets and variables required for mobility calculations -------
@@ -201,6 +201,8 @@ activity.log <- datasets.all$activity %>% filter(label %in% acts)
 #          times < as.POSIXct(x="22:00:00",format="%H:%M:%S",tz="CET"))
 
 activity.bouts <- activity_bouts(activity.log, acts); remove(activity.log)
+#saveRDS(activity.bouts,paste0("M:/PhD_Folder/awear_bm/output_data/activity_",p,".Rds"))
+
 
 activity.bouts.pday <- activity.bouts %>% group_by(dates, activity) %>% 
   summarise(total.time =  sum(duration), N = n()) %>%
