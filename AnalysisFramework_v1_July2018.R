@@ -51,26 +51,6 @@ for(p in p.codes){
   list2env(P, .GlobalEnv); remove(P)
   d.study <- as.numeric(round(difftime(d.stop,d.start,units="days")))
   datasets.all <- readRDS(paste0("M:/PhD_Folder/awear_bm/output_data/datasets_",p,".Rds"))
-  
-  # step count log file
-  steps.log <- datasets.all$step_count %>% 
-    #filter(timestamp>=d.start, timestamp<=(d.start %m+% days(d.study))) %>% # get timeframe of just the day of interest
-    select(step_count, dsource, timestamp, intervals.alt, dates, times)
-  
-  # for debugging/investigation
-  # steps_vis(steps.log)
-  # steps.log %>% count(dsource) 
-  
-  #** Daily total step counts -------
-  steps.watch <- daily_steps(steps.log,"watch")
-  steps.phone <- daily_steps(steps.log,"phone")
-  
-  # save a set with phone and watch counts over day
-  stepcounters <- rbind(steps.watch %>% ungroup() %>% select(timestamp,stepcounter) %>% mutate(source="watch"),
-                        steps.phone %>% ungroup() %>% select(timestamp,stepcounter) %>% mutate(source="phone")) %>%
-    mutate(participant = p)
-  
-  saveRDS(stepcounters,paste0("M:/PhD_Folder/awear_bm/output_data/steps_",p,".Rds"))
 }   
 # MOBILITY  ==========================================
 
@@ -179,10 +159,11 @@ steps.log <- datasets.all$step_count %>%
 steps.watch <- daily_steps(steps.log,"watch")
 steps.phone <- daily_steps(steps.log,"phone")
 
-# save a set with phone and watch counts over day
-stepcounters <- rbind(steps.watch %>% ungroup() %>% select(timestamp,stepcounter) %>% mutate(source="watch"),
-                      steps.phone %>% ungroup() %>% select(timestamp,stepcounter) %>% mutate(source="phone")) %>%
-  mutate(participant = p)
+# # save a set with phone and watch counts over day
+# stepcounters <- rbind(steps.watch %>% ungroup() %>% select(dates, timestamp, stepcounter) %>% mutate(source="watch"),
+#                       steps.phone %>% ungroup() %>% select(dates, timestamp,stepcounter) %>% mutate(source="phone")) %>%
+#   mutate(participant = p)
+# saveRDS(stepcounters,paste0("M:/PhD_Folder/awear_bm/output_data/steps_",p,".Rds"))
 
 # daily totals #TODO:fix the merge-- fixed with all.x and all.y, not tested really yet.
 steps.totals <- merge(x=steps.watch %>% summarise(total = max(stepcounter)), 
