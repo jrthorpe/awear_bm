@@ -51,7 +51,8 @@ source("./Rscripts/users.R")
   #              "steps")
 
 
-p.codes <- c("P03JJ","P06SS","P07MG","P08UH","P10JL","P13NB")
+# p.codes <- c("P03JJ","P06SS","P07MG","P08UH","P10JL","P13NB") # case studies
+p.codes <- c("daisy","violet","agapantha","anthurium","nasturtium") # pilot
 for (p in p.codes) {
   
   P <- participants[[p]]
@@ -65,6 +66,6 @@ for (p in p.codes) {
     lapply(restructure, userid, d.start, d.stop)
   datasets.all <- Filter(function(x) !is.null(x)[1],datasets.all) # remove any null dataframes
   
-  saveRDS(datasets.all,paste0("M:/PhD_Folder/awear_bm/output_data/datasets_",p,".Rds"))
+  saveRDS(datasets.all,paste0("M:/PhD_Folder/awear_bm/output_data/datasets_", p,".Rds"))
   
 }
