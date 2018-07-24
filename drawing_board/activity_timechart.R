@@ -4,7 +4,7 @@ bout_melt <- melt(activity.bouts, id.vars = c("dates","bout","activity"),
   group_by(dates, activity, bout)
 
 plot_ly(data = bout_melt %>% filter(activity == "Still"),
-        x = ~format(value, "%H:%M"),
+        x = ~format(value, "%H:%M"), #NOTE: this does not display the time properly, irregular intervals are spread regularly
         y = ~dates,
         type = "scatter",
         mode = "lines",
