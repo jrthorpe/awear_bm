@@ -43,10 +43,10 @@ source("./Rscripts/users.R")
 # SETTINGS ==========================================
 
 # Select participant and load data
-p <- "nasturtium" # single participant
-# p.codes <- c("P03JJ","P06SS","P07MG","P08UH","P10JL","P13NB") # case studies
-# p.codes <- c("daisy","violet","agapantha","anthurium","nasturtium") # pilot
-
+#p <- "anthurium" # single participant
+#p.codes <- c("P03JJ","P06SS","P07MG","P08UH","P10JL","P13NB") # case studies
+p.codes <- c("daisy","violet","agapantha","anthurium","nasturtium") # pilot
+for(p in p.codes){
   P <- participants[[p]]
   list2env(P, .GlobalEnv); remove(P)
   d.study <- as.numeric(round(difftime(d.stop,d.start,units="days")))
@@ -69,8 +69,8 @@ Qd <- .99 # quantile of distances to include in the MC polygon
 # GPS log file
 gps.log <- datasets.all$location %>% 
   filter(accuracy<=loc.accuracy) %>% # get rid of data points with low accuracy
-  select(lat, lon, timestamp, intervals.alt, dates, times) %>% 
-  filter(timestamp>=d.start, timestamp<=(d.start %m+% days(d.study))) # get timeframe of just the day of interest
+  select(lat, lon, timestamp, intervals.alt, dates, times) #%>% 
+  #filter(timestamp>=d.start, timestamp<=(d.start %m+% days(d.study))) # get timeframe of just the day of interest
 
 # calculate home coordinates based on location data
 home <- find_home(gps.log,"lat","lon")
@@ -103,6 +103,13 @@ gps.traj %<>% ungroup(gps.traj) %>%
 traj.summary <- summarise_trajectories(gps.traj=gps.traj,
                                        dist.threshold=dist.threshold)
 
+# save for pilot evaluation (stay/move plots):
+p.traj <- traj.summary %>% select(dates, traj.event, T.start, T.end, is.stay, loc.id, durations) %>%
+  mutate(participant = p)
+saveRDS(p.traj,paste0("M:/PhD_Folder/awear_bm/output_data/traj_",p,".Rds"))
+
+}
+
 # ** Calculate all metrics by day -----
 
 mob.metrics <- get_metrics(traj.summary)
@@ -115,9 +122,16 @@ mob.metrics %<>% mutate(mcp.area = mcp.areas$mcp.area) # TODO: create the possib
 # ** Save Results ------
 
 # # Saving output for plots etc:
-# nina.metrics <- metrics.results %>% select(dates, Tt.out, N.places) %>%
-#   mutate(day=c(1:nrow(metrics.results)), participant = "nina")
-# saveRDS(nina.metrics,"M:/PhD_Folder/CaseStudies/Data_analysis/output/nina_metrics.Rds")
+# p.metrics <- mob.metrics %>% select(dates, Tt.out, N.places) %>% 
+#   mutate(day=c(1:nrow(mob.metrics)), participant = p)
+# saveRDS(p.metrics,paste0("M:/PhD_Folder/awear_bm/output_data/metrics_",p,".Rds"))
+#}
+
+# Saving output for plots etc:
+nina.metrics <- mob.metrics %>% select(dates, Tt.out, N.places) %>%
+  filter(dates < as.POSIXct("2018-06-24") | dates > as.POSIXct("2018-07-06")) # for Nina only
+nina.metrics %<>% mutate(day=c(1:nrow(nina.metrics)), participant = "nasturtium")
+saveRDS(nina.metrics,"M:/PhD_Folder/awear_bm/output_data/nina_metrics.Rds")
 
 # saveRDS(metrics.results,"M:/PhD_Folder/CaseStudies/Data_analysis/output/metrics_p03jj.Rds")
 
