@@ -16,10 +16,18 @@ act.assessments <- readRDS("./output_data/activity_assessments_post.Rds")
 
 act.list <- list(P03JJ = readRDS("./output_data/activitymoves_P03JJ.Rds"),
                 P06SS = readRDS("./output_data/activitymoves_P06SS.Rds"),
-                P07MG = readRDS("./output_data/activitymoves_P03JJ.Rds"),
-                P08UH = readRDS("./output_data/activitymoves_P06SS.Rds"),
-                P10JL = readRDS("./output_data/activitymoves_P03JJ.Rds"),
-                P13NB = readRDS("./output_data/activitymoves_P06SS.Rds"))
+                P07MG = readRDS("./output_data/activitymoves_P07MG.Rds"),
+                P08UH = readRDS("./output_data/activitymoves_P08UH.Rds"),
+                P10JL = readRDS("./output_data/activitymoves_P10JL.Rds"),
+                P13NB = readRDS("./output_data/activitymoves_P13NB.Rds"))
+
+steps.list <- list(P03JJ = readRDS("./output_data/steps_P03JJ.Rds"),
+                 P06SS = readRDS("./output_data/steps_P06SS.Rds"),
+                 P07MG = readRDS("./output_data/steps_P07MG.Rds"),
+                 P08UH = readRDS("./output_data/steps_P08UH.Rds"),
+                 P10JL = readRDS("./output_data/steps_P10JL.Rds"),
+                 P13NB = readRDS("./output_data/steps_P13NB.Rds"))
+
 # / Mobility
 # mb.assessments <- mobility_assessment %>% filter(assessment == "post") %>% select(-assessment)
 # remove(mobility_assessment)
@@ -28,10 +36,10 @@ mz.assessments <- readRDS("./output_data/mobility_assessments_post.Rds")
 
 mz.list <- list(P03JJ = readRDS("./output_data/mobilityzones_P03JJ.Rds"),
                 P06SS = readRDS("./output_data/mobilityzones_P06SS.Rds"),
-                P07MG = readRDS("./output_data/mobilityzones_P03JJ.Rds"),
-                P08UH = readRDS("./output_data/mobilityzones_P06SS.Rds"),
-                P10JL = readRDS("./output_data/mobilityzones_P03JJ.Rds"),
-                P13NB = readRDS("./output_data/mobilityzones_P06SS.Rds"))
+                P07MG = readRDS("./output_data/mobilityzones_P07MG.Rds"),
+                P08UH = readRDS("./output_data/mobilityzones_P08UH.Rds"),
+                P10JL = readRDS("./output_data/mobilityzones_P10JL.Rds"),
+                P13NB = readRDS("./output_data/mobilityzones_P13NB.Rds"))
 
 
 
@@ -39,7 +47,7 @@ mz.list <- list(P03JJ = readRDS("./output_data/mobilityzones_P03JJ.Rds"),
 mz.plot_list = vector("list",length(mz.list))
 for(i in 1:length(mz.list)){
 
-  #i<-1 #debug
+  #<-1 #debug
   p.code <- p.codes[i] # get participant code
   mz.dat <- mz.list[[p.code]] # use participant code to ensure matching data
   
@@ -55,17 +63,25 @@ for(i in 1:length(mz.list)){
   mz.compare %<>% mutate(zone=rownames(mz.compare))
   mz.toplot <- melt(mz.compare,id.vars = "zone")
   
-  p <- plot_ly(mz.toplot,
-               x=~variable,
-               y=~zone,
-               type="scatter",
-               mode = "markers",
-               color=~variable,
-               colors=c("lightblue","orange"),
-               size = ~value,
-               marker = list(opacity = 0.8, sizeref=1.5, sizemode = "diameter")) %>%
-    layout(xaxis=list(title=FALSE),
-           showlegend=FALSE)
+  # p <- plot_ly(mz.toplot,
+  #              x=~variable,
+  #              y=~zone,
+  #              type="scatter",
+  #              mode = "markers",
+  #              color=~variable,
+  #              colors=c("lightblue","orange"),
+  #              size = ~value,
+  #              marker = list(opacity = 0.8, sizeref=1.5, sizemode = "diameter")) %>%
+  #   layout(xaxis=list(title=FALSE),
+  #          showlegend=FALSE)
+  
+  p <- plot_ly(mz.toplot, 
+                     x = ~zone, 
+                     y = ~value,
+                     color = ~variable,
+                     colors = c("lightblue","orange"),
+                     type = "bar", 
+                     showlegend=ifelse(p.code=="P13NB",TRUE,FALSE))
   
   mz.plot_list[[i]] <- p
 }
@@ -84,6 +100,11 @@ subplot(mz.plot_list, nrows = 2, margin=0.08) # for 2 columns use ceiling(i/2)
 remove(mz.compare,mz.dat,mz.toplot,mz.weekly,q.post)
 
 # ** Activity results ----
+
+
+# TODO: adherence step from mz doesn't work here because they don't go out as
+# much. Need to get adherence information "globally" (e.g. from screen touch)
+# and apply to all tests.
 
 # survey results:
 activity.results <- act.assessments %>% mutate(vehicle.days = car.days+dot.days,
@@ -111,7 +132,7 @@ for(p in p.codes){
   sensor.active <- tmp %>% ungroup() %>% filter(activity=="Foot") %>%
     select(dates, activity, total.time, moving) %>%
     mutate(dweek = (as.numeric(dates-dates[1])) %/% 7) %>%
-    filter(dweek %in% c(10:14)) 
+    filter(dweek %in% c((max(dweek)-5):(max(dweek)-1))) 
   
   sensor.active.days <- sensor.active %>%
     filter(moving==0) %>%
@@ -133,7 +154,7 @@ for(p in p.codes){
     mutate(dweek = (as.numeric(dates-dates[1])) %/% 7) %>% group_by(dweek) %>%
     summarise_at(vars(Foot,Bicycle,Vehicle), sum, na.rm = TRUE)
   
-  sensor.transport.days <- sensor.transport %>% filter(dweek %in% c(10:14)) %>%
+  sensor.transport.days <- sensor.transport %>% filter(dweek %in% c((max(dweek)-5):(max(dweek)-1))) %>%
     summarise_at(vars(Foot,Bicycle,Vehicle), mean, na.rm = TRUE)
   
   # Create a dataframe of one row matching the variables in the assessment, and append.
@@ -155,7 +176,9 @@ for(p in p.codes){
   activity.results <- rbind(activity.results, current)
   
 }
-
+remove(current, 
+       sensor.active, sensor.active.days, sensor.active.mpd, 
+       sensor.transport, sensor.transport.days)
 
 
 # Plot A1: transport modes days per week
@@ -172,7 +195,7 @@ for(p in p.codes){
                      x = ~mode, 
                      y = ~value,
                      color = ~source,
-                     colors = c("blue","orange"),
+                     colors = c("lightblue","orange"),
                      type = "bar",
                      legendgroup = ~source, 
                      showlegend=ifelse(p=="P03JJ",TRUE,FALSE))
@@ -184,21 +207,35 @@ subplot(td.plot_list, nrows = 2, margin=0.08) # for 2 columns use ceiling(i/2)
 
 
 
-
-# TODO: adherence step from mz doesn't work here because they don't go out as
-# much. Need to get adherence information "globally" (e.g. from screen touch)
-# and apply to all tests.
-
-
-
-
 # Plot A2: active hrs/day by stay/move
 
-
-
+active.plot_list = list()
+for(p in p.codes){
+  
+  active.mpd <- activity.results %>% filter(participant==p) %>% 
+    select(active.work.mpd, foot.mpd, source) %>%
+    melt(id.vars="source", variable.name = "type", value.name = "minutes")
+  
+  
+  active.plot <- plot_ly(active.mpd, 
+          x = ~source, 
+          y = ~minutes,
+          color = ~type,
+          colors = c("lightblue","orange"),
+          type = "bar",
+          showlegend=ifelse(p=="P03JJ",TRUE,FALSE)) %>%
+    layout(barmode = "stack")
+  
+  active.plot_list[[p]] <- active.plot
+  
+}
+subplot(active.plot_list, nrows = 2, margin=0.08) # for 2 columns use ceiling(i/2)
 
 
 # Plot A3: still time hrs/day by (stay only)
+
+
+# STEPS:
 
 
 
