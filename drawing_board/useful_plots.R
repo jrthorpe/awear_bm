@@ -24,7 +24,7 @@ plot_ly(gps.traj.day,
             color = ~as.factor(traj.event), #or loc.id
             colors = "Set1")
 
-# **map in background:  ----
+# **map in background  ----
 mappoints <- gps.traj.day
 coordinates(mappoints) <- ~ lon + lat
 proj4string(mappoints) <- "+init=epsg:4326"

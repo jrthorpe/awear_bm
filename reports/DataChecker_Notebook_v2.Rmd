@@ -29,7 +29,7 @@ library(sp)
 library(caTools)
 
 # Load custom functions:
-source("M:/PhD_Folder/awear_jrt/R_jrt/JRT_utils.R")
+source("M:/PhD_Folder/awear_bm/Rscripts/JRT_utils.R")
 
 # Define constants:
 folder <- "M:/PhD_Folder/CaseStudies/Data_dumps/dump_current_analysis/" # path to folder that holds multiple .csv files, downloaded from nightingale webportal
@@ -66,8 +66,8 @@ users <- list(julia = "93a6d31c-e216-48d8-a9a2-f2f72362548d",
 userid <- users$nina
 
 # Set period of interest
-d.start <- as.POSIXct("2018-06-15") # yyyy-mm-dd 
-d.stop <- as.POSIXct("2018-07-12")
+d.start <- as.POSIXct("2018-06-19") # yyyy-mm-dd 
+d.stop <- as.POSIXct("2018-07-11")
 
 cat("This report is for user ", names(users[users==userid]), "for the time period from ", as.character(d.start), " to ", as.character(d.stop)) 
 
