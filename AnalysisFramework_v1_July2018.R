@@ -45,13 +45,33 @@ source("./Rscripts/users.R")
 # Select participant and load data
 p <- "anthurium" # single participant
 #p.codes <- c("P03JJ","P06SS","P07MG","P08UH","P10JL","P13NB") # case studies
-#p.codes <- c("daisy","violet","agapantha","anthurium","nasturtium") # pilot
-#for(p in p.codes){
+p.codes <- c("daisy","violet","agapantha","anthurium","nasturtium") # pilot
+for(p in p.codes){
   P <- participants[[p]]
   list2env(P, .GlobalEnv); remove(P)
   d.study <- as.numeric(round(difftime(d.stop,d.start,units="days")))
   datasets.all <- readRDS(paste0("M:/PhD_Folder/awear_bm/output_data/datasets_",p,".Rds"))
   
+  # step count log file
+  steps.log <- datasets.all$step_count %>% 
+    #filter(timestamp>=d.start, timestamp<=(d.start %m+% days(d.study))) %>% # get timeframe of just the day of interest
+    select(step_count, dsource, timestamp, intervals.alt, dates, times)
+  
+  # for debugging/investigation
+  # steps_vis(steps.log)
+  # steps.log %>% count(dsource) 
+  
+  #** Daily total step counts -------
+  steps.watch <- daily_steps(steps.log,"watch")
+  steps.phone <- daily_steps(steps.log,"phone")
+  
+  # save a set with phone and watch counts over day
+  stepcounters <- rbind(steps.watch %>% ungroup() %>% select(timestamp,stepcounter) %>% mutate(source="watch"),
+                        steps.phone %>% ungroup() %>% select(timestamp,stepcounter) %>% mutate(source="phone")) %>%
+    mutate(participant = p)
+  
+  saveRDS(stepcounters,paste0("M:/PhD_Folder/awear_bm/output_data/steps_",p,".Rds"))
+}   
 # MOBILITY  ==========================================
 
 #** Moblity Setup: create datasets and variables required for mobility calculations -------
@@ -159,6 +179,11 @@ steps.log <- datasets.all$step_count %>%
 steps.watch <- daily_steps(steps.log,"watch")
 steps.phone <- daily_steps(steps.log,"phone")
 
+# save a set with phone and watch counts over day
+stepcounters <- rbind(steps.watch %>% ungroup() %>% select(timestamp,stepcounter) %>% mutate(source="watch"),
+                      steps.phone %>% ungroup() %>% select(timestamp,stepcounter) %>% mutate(source="phone")) %>%
+  mutate(participant = p)
+
 # daily totals #TODO:fix the merge-- fixed with all.x and all.y, not tested really yet.
 steps.totals <- merge(x=steps.watch %>% summarise(total = max(stepcounter)), 
                       y=steps.phone %>% summarise(total = max(stepcounter)),
@@ -201,7 +226,7 @@ activity.log <- datasets.all$activity %>% filter(label %in% acts)
 #          times < as.POSIXct(x="22:00:00",format="%H:%M:%S",tz="CET"))
 
 activity.bouts <- activity_bouts(activity.log, acts); remove(activity.log)
-#saveRDS(activity.bouts,paste0("M:/PhD_Folder/awear_bm/output_data/activity_",p,".Rds"))
+#saveRDS(activity.bouts %>% mutate(participant=p),paste0("M:/PhD_Folder/awear_bm/output_data/activity_",p,".Rds"))
 
 
 activity.bouts.pday <- activity.bouts %>% group_by(dates, activity) %>% 
