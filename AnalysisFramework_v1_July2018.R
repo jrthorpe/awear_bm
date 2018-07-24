@@ -38,14 +38,19 @@ source("./Rscripts/jrt_utils.R")
 source("./Rscripts/jrt_mobility.R")
 source("./Rscripts/jrt_steps.R")
 source("./Rscripts/jrt_activity.R")
+source("./Rscripts/users.R")
 
 # SETTINGS ==========================================
 
-# Select participant
-p <- "P13NB"
-p.codes <- c("P03JJ","P06SS","P07MG","P08UH","P10JL","P13NB")
+# Select participant and load data
+p <- "nasturtium" # single participant
+# p.codes <- c("P03JJ","P06SS","P07MG","P08UH","P10JL","P13NB") # case studies
+# p.codes <- c("daisy","violet","agapantha","anthurium","nasturtium") # pilot
 
-datasets.all <- readRDS(paste0("M:/PhD_Folder/awear_bm/output_data/datasets_",p,".Rds"))
+  P <- participants[[p]]
+  list2env(P, .GlobalEnv); remove(P)
+  d.study <- as.numeric(round(difftime(d.stop,d.start,units="days")))
+  datasets.all <- readRDS(paste0("M:/PhD_Folder/awear_bm/output_data/datasets_",p,".Rds"))
 
 # MOBILITY  ==========================================
 
@@ -57,7 +62,7 @@ dT <- 5  # delta T, time window in minutes
 dD <- 100 # delta D, diagonal distance boundary in meters
 time.threshold.stay <- 10 # minimum duration of a stay, in minutes
 time.threshold.go <- 5 # cut-off for filtering out "go" events to/from same location, in minutes
-dist.threshold <- 30 # distance in meters within which two centriods belong to same stay location
+dist.threshold <- 50 # distance in meters within which two centriods belong to same stay location
 Qd <- .99 # quantile of distances to include in the MC polygon
 #doi <- as.POSIXct("2018-01-30") # day of interest (use when not d.start)
 
@@ -148,7 +153,6 @@ steps.totals <- merge(x=steps.watch %>% summarise(total = max(stepcounter)),
                       incomparables = NA)
 saveRDS(steps.totals,paste0("M:/PhD_Folder/awear_bm/output_data/steps_",p,".Rds"))
 
-
 #** Extraction walking bouts from step counts -------
 
 # # probably won't be used besides to show that it is not feasible, since there
@@ -211,7 +215,7 @@ mobility.zones <- traj.summary %>%
   dcast(dates~zone,value.var="entry") %>%
   mutate(dweek = (as.numeric(dates-dates[1])) %/% 7)
 
-saveRDS(mobility.zones,paste0("M:/PhD_Folder/awear_bm/output_data/mobilityzones_",p,".Rds"))
+#saveRDS(mobility.zones,paste0("M:/PhD_Folder/awear_bm/output_data/mobilityzones_",p,".Rds"))
 
 
 # ** Activity Patterns/Levels ----
@@ -234,7 +238,7 @@ activity.moves.pday <- activity.moves %>%
   group_by(dates, activity, moving) %>% 
   summarise(total.time = sum(duration))
 
-saveRDS(activity.moves.pday,paste0("M:/PhD_Folder/awear_bm/output_data/activitymoves_",p,".Rds"))
+#saveRDS(activity.moves.pday,paste0("M:/PhD_Folder/awear_bm/output_data/activitymoves_",p,".Rds"))
 
 
 # 
@@ -300,7 +304,7 @@ plot_ly(test[2:8,],
 # For a single day:
 # append trajectory information to the gps log file, including if the points is
 # a stay/go and location ID (note: all "go" points are assigned location ID of 0)
-doi <- as.POSIXct("2018-06-12") # day of interest YYYY-MM-DD
+doi <- as.POSIXct("2018-07-08") # day of interest YYYY-MM-DD
 singleday <- gps.log %>% filter(timestamp>=doi, timestamp<=(doi %m+% days(1)))
 gps.traj.day <- get_trajectories(df=singleday,
                             dT = dT,

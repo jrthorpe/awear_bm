@@ -244,11 +244,12 @@ summarise_trajectories <- function(gps.traj, dist.threshold) {
     summarize(T.start = timestamp[1], T.end = timestamp[length(timestamp)], 
               is.stay = median(is.stay), loc.id = mean(loc.id),
               clat = ifelse(is.stay, mean(lat), NA), clon = ifelse(is.stay, mean(lon), NA),    # stays centroids
-              action.range = max(homedist,na.rm=TRUE)# distance from home
+              action.range = max(homedist,na.rm=TRUE), # distance from home
+              c.dist = ifelse(is.stay, mean(homedist), NA) # distance between home and stay centroids
     ) %>%
     mutate(T.end = c(T.start[-1],T.end[length(T.end)])) %>%
     mutate(durations = difftime(T.end,T.start, units = "mins")) %>%
-    mutate(is.home = ifelse(is.stay==1 & action.range<dist.threshold, TRUE, FALSE))
+    mutate(is.home = ifelse(is.stay==1 & c.dist<dist.threshold, TRUE, FALSE))
   
   # get displacements between stays
   tmp.displacements <- distGeo(ungroup(traj.summary) %>% filter(is.stay==1) %>% select(clon,clat),
