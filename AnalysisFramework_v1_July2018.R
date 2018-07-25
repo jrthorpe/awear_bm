@@ -43,22 +43,18 @@ source("./Rscripts/users.R")
 # SETTINGS ==========================================
 
 # Select participant and load data
-p <- "anthurium" # single participant
+p <- "P03JJ" # single participant
 #p.codes <- c("P03JJ","P06SS","P07MG","P08UH","P10JL","P13NB") # case studies
-p.codes <- c("daisy","violet","agapantha","anthurium","nasturtium") # pilot
-for(p in p.codes){
+#p.codes <- c("daisy","violet","agapantha","anthurium","nasturtium") # pilot
+#for(p in p.codes){
   P <- participants[[p]]
   list2env(P, .GlobalEnv); remove(P)
   d.study <- as.numeric(round(difftime(d.stop,d.start,units="days")))
   datasets.all <- readRDS(paste0("M:/PhD_Folder/awear_bm/output_data/datasets_",p,".Rds"))
-}   
+#}   
 # MOBILITY  ==========================================
 
-#** Moblity Setup: create datasets and variables required for mobility calculations -------
-
-# source("./Rscripts/testmod.R") # testing to see if it works to just "outsource" all this to modules
-
-# define variables:
+# ~  Define variables ----
 loc.accuracy <- 25 # threshold for accuracy of location points in meters
 dT <- 5  # delta T, time window in minutes
 dD <- 100 # delta D, diagonal distance boundary in meters
@@ -68,78 +64,25 @@ dist.threshold <- 50 # distance in meters within which two centriods belong to s
 Qd <- .99 # quantile of distances to include in the MC polygon
 #doi <- as.POSIXct("2018-01-30") # day of interest (use when not d.start)
 
-# GPS log file
-gps.log <- datasets.all$location %>% 
-  filter(accuracy<=loc.accuracy) %>% # get rid of data points with low accuracy
-  select(lat, lon, timestamp, intervals.alt, dates, times) #%>% 
-  #filter(timestamp>=d.start, timestamp<=(d.start %m+% days(d.study))) # get timeframe of just the day of interest
+# ~  Extract trajectories and metrics ----
+# Run trajectory extraction module on location dataset
+# inputs: datasets.all$location
+# outputs: home, gps.traj, traj.summary
+source("./Rscripts/mod_traj.R")
+mob.metrics <- get_metrics(traj.summary, gps.traj)
 
-# calculate home coordinates based on location data
-home <- find_home(gps.log,"lat","lon")
+# ~  Save results ----
+# p.traj <- traj.summary %>% select(dates, traj.event, T.start, T.end, is.stay, loc.id, durations) %>%
+#   mutate(participant = p)
+# saveRDS(p.traj,paste0("M:/PhD_Folder/awear_bm/output_data/traj_",p,".Rds"))
 
-#** Extract trajectories: get series of stay/go events ("mobility traces") ====
-
-# For mulitday sets:
-gps.traj <- gps.log %>% group_by(dates) %>% do(get_trajectories(.,
-                                                             dT = dT,
-                                                             dD = dD,
-                                                             T.stay = time.threshold.stay,
-                                                             T.go = time.threshold.go,
-                                                             dist.threshold = dist.threshold))
-remove(gps.log)
-
-# ** Prepare inputs -----
-
-# update home location based on all stays that are home (stay points close to current home estimation)
-home <- update_home(df=gps.traj,home=home,dist.threshold = dist.threshold)
- 
-# add "distance to home" column for all points (in trajectories dataframe)
-gps.traj %<>% ungroup(gps.traj) %>%
-  mutate(homedist = distGeo(home,
-                            ungroup(gps.traj) %>% select(lon,lat),
-                            a=6378137, f=1/298.257223563))
-
-# add columns for action range and displacement, and summarise data by trajectory segment/event
-# action range: straight line distance between home and most distal point of a journey (furthest point for moves, average for stays)
-# displacements: straight line distances between consecutive stays
-traj.summary <- summarise_trajectories(gps.traj=gps.traj,
-                                       dist.threshold=dist.threshold)
-
-# save for pilot evaluation (stay/move plots):
-p.traj <- traj.summary %>% select(dates, traj.event, T.start, T.end, is.stay, loc.id, durations) %>%
-  mutate(participant = p)
-saveRDS(p.traj,paste0("M:/PhD_Folder/awear_bm/output_data/traj_",p,".Rds"))
-
-
-
-# ** Calculate all metrics by day -----
-
-mob.metrics <- get_metrics(traj.summary)
-
-# minimum convex polygon(reference: http://mgritts.github.io/2016/04/02/homerange-mcp/)
-mcp.areas <- gps.traj  %>% group_by(dates) %>% 
-  summarise(mcp.area=get_mcp_area(lon=lon,lat=lat,Qd=Qd))                                  
-mob.metrics %<>% mutate(mcp.area = mcp.areas$mcp.area) # TODO: create the possibility to get out the coords and plot for a visual check and for the paper (or other demo).
-
-# ** Save Results ------
-
-# # Saving output for plots etc:
 # p.metrics <- mob.metrics %>% select(dates, Tt.out, N.places) %>% 
+#   filter(dates < as.POSIXct("2018-06-24") | dates > as.POSIXct("2018-07-06")) %>% # for Nina only
 #   mutate(day=c(1:nrow(mob.metrics)), participant = p)
 # saveRDS(p.metrics,paste0("M:/PhD_Folder/awear_bm/output_data/metrics_",p,".Rds"))
-#}
 
-# Saving output for plots etc:
-nina.metrics <- mob.metrics %>% select(dates, Tt.out, N.places) %>%
-  filter(dates < as.POSIXct("2018-06-24") | dates > as.POSIXct("2018-07-06")) # for Nina only
-nina.metrics %<>% mutate(day=c(1:nrow(nina.metrics)), participant = "nasturtium")
-saveRDS(nina.metrics,"M:/PhD_Folder/awear_bm/output_data/nina_metrics.Rds")
-
-# saveRDS(metrics.results,"M:/PhD_Folder/CaseStudies/Data_analysis/output/metrics_p03jj.Rds")
-
-# clear environment of variables not used further:
-remove(loc.accuracy, dT, dD, time.threshold.stay, time.threshold.go, dist.threshold, Qd,
-       mcp.areas)
+# ~  Clear environment ----
+remove(loc.accuracy, dT, dD, time.threshold.stay, time.threshold.go, dist.threshold, Qd)
 
 # END ---
 

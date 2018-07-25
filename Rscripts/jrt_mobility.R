@@ -265,7 +265,7 @@ summarise_trajectories <- function(gps.traj, dist.threshold) {
 }
 
 # GET METRICS ----
-get_metrics <- function(traj.summary) {
+get_metrics <- function(traj.summary, gps.traj) {
   
   
   traj.summary %<>% group_by(dates)
@@ -287,6 +287,11 @@ get_metrics <- function(traj.summary) {
   metrics.results %<>% mutate(N.moves = N.moves$n,
                               N.stay.out = N.stay.out$n,
                               N.places = N.places$n)
+  
+  # minimum convex polygon(reference: http://mgritts.github.io/2016/04/02/homerange-mcp/)
+  mcp.areas <- gps.traj  %>% group_by(dates) %>% 
+    summarise(mcp.area=get_mcp_area(lon=lon,lat=lat,Qd=Qd))                                  
+  metrics.results %<>% mutate(mcp.area = mcp.areas$mcp.area) # TODO: create the possibility to get out the coords and plot for a visual check and for the paper (or other demo).
   
   return(metrics.results)
 }
