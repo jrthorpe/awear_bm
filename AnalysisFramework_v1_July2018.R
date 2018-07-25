@@ -56,6 +56,8 @@ for(p in p.codes){
 
 #** Moblity Setup: create datasets and variables required for mobility calculations -------
 
+# source("./Rscripts/testmod.R") # testing to see if it works to just "outsource" all this to modules
+
 # define variables:
 loc.accuracy <- 25 # threshold for accuracy of location points in meters
 dT <- 5  # delta T, time window in minutes
@@ -108,7 +110,7 @@ p.traj <- traj.summary %>% select(dates, traj.event, T.start, T.end, is.stay, lo
   mutate(participant = p)
 saveRDS(p.traj,paste0("M:/PhD_Folder/awear_bm/output_data/traj_",p,".Rds"))
 
-}
+
 
 # ** Calculate all metrics by day -----
 
