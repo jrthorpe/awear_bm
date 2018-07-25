@@ -7,14 +7,6 @@
 #
 # ------------------------------------------------
 
-
-
-# Get GPS log file from dataset
-gps.log <- datasets.all$location %>% 
-  filter(accuracy<=loc.accuracy) %>% # get rid of data points with low accuracy
-  select(lat, lon, timestamp, intervals.alt, dates, times) #%>% 
-#filter(timestamp>=d.start, timestamp<=(d.start %m+% days(d.study))) # get timeframe of just the day of interest
-
 # Calculate home coordinates based on location data
 home <- find_home(gps.log,"lat","lon")
 

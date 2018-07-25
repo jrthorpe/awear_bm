@@ -42,7 +42,7 @@ source("./Rscripts/users.R")
 
 # SETTINGS ==========================================
 
-# Select participant and load data
+# ~  Select participant and load data
 p <- "P03JJ" # single participant
 #p.codes <- c("P03JJ","P06SS","P07MG","P08UH","P10JL","P13NB") # case studies
 #p.codes <- c("daisy","violet","agapantha","anthurium","nasturtium") # pilot
@@ -51,10 +51,12 @@ p <- "P03JJ" # single participant
   list2env(P, .GlobalEnv); remove(P)
   d.study <- as.numeric(round(difftime(d.stop,d.start,units="days")))
   datasets.all <- readRDS(paste0("M:/PhD_Folder/awear_bm/output_data/datasets_",p,".Rds"))
-#}   
-# MOBILITY  ==========================================
+#} 
+
 
 # ~  Define variables ----
+  
+# Mobility:
 loc.accuracy <- 25 # threshold for accuracy of location points in meters
 dT <- 5  # delta T, time window in minutes
 dD <- 100 # delta D, diagonal distance boundary in meters
@@ -62,152 +64,88 @@ time.threshold.stay <- 10 # minimum duration of a stay, in minutes
 time.threshold.go <- 5 # cut-off for filtering out "go" events to/from same location, in minutes
 dist.threshold <- 50 # distance in meters within which two centriods belong to same stay location
 Qd <- .99 # quantile of distances to include in the MC polygon
-#doi <- as.POSIXct("2018-01-30") # day of interest (use when not d.start)
+#doi <- as.POSIXct("2018-01-30") # day of interest (use when not d.start)  
 
-# ~  Extract trajectories and metrics ----
-# Run trajectory extraction module on location dataset
-# inputs: datasets.all$location
-# outputs: home, gps.traj, traj.summary
+# Steps:
+win.size <- 15 # window size in minutes for...
+
+# Activity:
+acts <- c("Still", "Foot", "Vehicle", "Bicycle")
+
+  
+# MOBILITY  ==========================================
+
+# get data
+gps.log <- datasets.all$location %>% 
+  filter(accuracy<=loc.accuracy) %>% # get rid of data points with low accuracy
+  select(lat, lon, timestamp, intervals.alt, dates, times)
+
+# get trajectories and metrics
 source("./Rscripts/mod_traj.R")
 mob.metrics <- get_metrics(traj.summary, gps.traj)
 
-# ~  Save results ----
-# p.traj <- traj.summary %>% select(dates, traj.event, T.start, T.end, is.stay, loc.id, durations) %>%
-#   mutate(participant = p)
-# saveRDS(p.traj,paste0("M:/PhD_Folder/awear_bm/output_data/traj_",p,".Rds"))
-
-# p.metrics <- mob.metrics %>% select(dates, Tt.out, N.places) %>% 
-#   filter(dates < as.POSIXct("2018-06-24") | dates > as.POSIXct("2018-07-06")) %>% # for Nina only
-#   mutate(day=c(1:nrow(mob.metrics)), participant = p)
-# saveRDS(p.metrics,paste0("M:/PhD_Folder/awear_bm/output_data/metrics_",p,".Rds"))
-
-# ~  Clear environment ----
+# clear environment
 remove(loc.accuracy, dT, dD, time.threshold.stay, time.threshold.go, dist.threshold, Qd)
 
 # STEP COUNT ===========================
 
-# ~  Define variables ----
-win.size <- 15 # window size in minutes for...
+# get data
+steps.log <- datasets.all$step_count %>% 
+  select(step_count, dsource, timestamp, intervals.alt, dates, times)
 
-# ~  Calculate step counts and bouts ----
-source("./Rscripts/mod_steps.R")
+# calculate results
+source("./Rscripts/mod_steps.R") # calculate step counts by day
 steps.win <- pattern_steps(steps.watch %>% ungroup(), win.size = win.size) # counts steps by time windows over the day
 
-# ~  Save steps results ----
-
-# # save a set with phone and watch counts over day
-# stepcounters <- rbind(steps.watch %>% ungroup() %>% select(dates, timestamp, stepcounter) %>% mutate(source="watch"),
-#                       steps.phone %>% ungroup() %>% select(dates, timestamp,stepcounter) %>% mutate(source="phone")) %>%
-#   mutate(participant = p)
-# saveRDS(stepcounters,paste0("M:/PhD_Folder/awear_bm/output_data/steps_",p,".Rds"))
-
-# saveRDS(steps.totals,paste0("M:/PhD_Folder/awear_bm/output_data/steps_",p,".Rds"))
-
-# ~  Clear environment ----
+# clear environment
 remove(win.size, steps.log, steps.phone, steps.watch)
 
 
 # ACTIVITY ===========================
 
-#** Extraction of activity bouts -------
-acts <- c("Still", "Foot", "Vehicle", "Bicycle")
+# get data
 activity.log <- datasets.all$activity %>% filter(label %in% acts)
-
-# To look at only "active" time of day
-# activity.log.day <- datasets.all$activity %>% filter(label %in% acts) %>%
-#   filter(times > as.POSIXct(x="06:00:00",format="%H:%M:%S",tz="CET"),
+#   filter(times > as.POSIXct(x="06:00:00",format="%H:%M:%S",tz="CET"),  # To look at only "active" time of day
 #          times < as.POSIXct(x="22:00:00",format="%H:%M:%S",tz="CET"))
 
+# calculate bouts
 activity.bouts <- activity_bouts(activity.log, acts); remove(activity.log)
-#saveRDS(activity.bouts %>% mutate(participant=p),paste0("M:/PhD_Folder/awear_bm/output_data/activity_",p,".Rds"))
 
-
+# summarise by day
 activity.bouts.pday <- activity.bouts %>% group_by(dates, activity) %>% 
   summarise(total.time =  sum(duration), N = n()) %>%
   mutate(mean.duration = total.time/N)
 
-# used to have as percentage of recording time here (see commits 18 July 2018), but wasn't that meaningful due to overlapping bouts etc.
-
 remove(acts)
-# END
 
-# RELATION TO QUESTIONNAIRES ----
+# SAVE RESULTS  ==========================================
 
+# ~  Mobility ----
+p.traj <- traj.summary %>% select(dates, traj.event, T.start, T.end, is.stay, loc.id, durations) %>%
+  mutate(participant = p)
+saveRDS(p.traj,paste0("M:/PhD_Folder/awear_bm/output_data/traj_",p,".Rds"))
 
-# ** Mobility Zones ----
-# mobility boundary crossings based on the mobility baseline questionnaire:
-# counts the number of times the person leaves a certain radius around their home
-# levels: daily, 4-6 per week, 1-3 per week, less than 1
-# TODO: fix this so it is not like every small trip at work is another additional trip out of town. -- done, only need in form TRUE/FALSE per day
+p.metrics <- mob.metrics %>% select(dates, Tt.out, N.places) %>%
+  filter(dates < as.POSIXct("2018-06-24") | dates > as.POSIXct("2018-07-06")) %>% # for Nina only
+  mutate(day=c(1:nrow(mob.metrics)), participant = p)
+saveRDS(p.metrics,paste0("M:/PhD_Folder/awear_bm/output_data/metrics_",p,".Rds"))
 
-mobility.zones <- traj.summary %>%
-  mutate(zone = cut(action.range, breaks = c(0,25, 50, 1000, 10000,Inf), 
-                    labels = c("mz1", "mz2", "mz3", "mz4", "mz5"))) %>%
-  group_by(dates, zone) %>%
-  summarize(entry = n()>0)%>% 
-  ungroup() %>% 
-  dcast(dates~zone,value.var="entry") %>%
-  mutate(dweek = (as.numeric(dates-dates[1])) %/% 7)
+# ~  Steps ----
 
-#saveRDS(mobility.zones,paste0("M:/PhD_Folder/awear_bm/output_data/mobilityzones_",p,".Rds"))
+# save a set with phone and watch cumulative count over day
+stepcounters <- rbind(steps.watch %>% ungroup() %>% select(dates, timestamp, stepcounter) %>% mutate(source="watch"),
+                      steps.phone %>% ungroup() %>% select(dates, timestamp,stepcounter) %>% mutate(source="phone")) %>%
+  mutate(participant = p)
+saveRDS(stepcounters,paste0("M:/PhD_Folder/awear_bm/output_data/steps_",p,".Rds"))
 
-
-# ** Activity Patterns/Levels ----
-
-# Transport:
-# vehicle, bicycle, foot>moves: days/week
-
-# Active time (not for transport):
-# foot > stays+moves > hrs/day
-# step count?
-
-# sedentary bouts:
-# still > stays
-
-# indicate whether activity bouts overlap with a move
-activity.moves <- bout_moves(activity.bouts, traj.summary)
-
-# daily summary for activity bouts with stay/move information 
-activity.moves.pday <- activity.moves %>% 
-  group_by(dates, activity, moving) %>% 
-  summarise(total.time = sum(duration))
-
-#saveRDS(activity.moves.pday,paste0("M:/PhD_Folder/awear_bm/output_data/activitymoves_",p,".Rds"))
+# total counts per day
+saveRDS(steps.totals,paste0("M:/PhD_Folder/awear_bm/output_data/steps_",p,".Rds"))
 
 
-# 
-# # Sections below currently not in use: keeping until the comparison with questionnaires is complete in separate script.
-# 
-# # for bicycle and vehicle stay/move information not necessary:
-# transport.modes <- daily.summary %>% ungroup() %>% 
-#   mutate(dweek = (as.numeric(dates-dates[1])) %/% 7) %>% 
-#   group_by(dweek, activity) %>% 
-#   summarise(days.per.week = sum(N>0),
-#             time.per.day = mean(total.time))
-# 
-# # for "Foot" and "Still" bouts, need to filter any during moves:
-# 
-# # get a summary of "Foot" events that overlap with moves
-# transport.foot <- activity.bouts %>% 
-#   filter(activity=="Foot", moving==1)%>% 
-#   group_by(dates) %>% 
-#   summarise(total.time=sum(duration))
-# 
-# transport.foot.weekly <- transport.foot %>% ungroup() %>% 
-#   mutate(dweek = (as.numeric(dates-dates[1])) %/% 7) %>% 
-#   group_by(dweek) %>% 
-#   summarise(days.per.week = n(),
-#             time.per.day = mean(total.time))
-# 
-# # for interest, may be useful in future:
-# activity.vs.moves <- activity.bouts %>% 
-#   group_by(dates,activity,moving) %>% 
-#   summarise(tt=sum(duration))
+# ~  Activity ----
+saveRDS(activity.bouts %>% mutate(participant=p),paste0("M:/PhD_Folder/awear_bm/output_data/activity_",p,".Rds"))
 
-# ** Still bouts ----
-# get from transport modes
-# TODO: need to exclude sleep time somehow. Options could be to take from period
-# between first and last step or screen touch.
+
 
 
 
