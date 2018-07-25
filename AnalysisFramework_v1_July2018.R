@@ -42,18 +42,6 @@ source("./Rscripts/users.R")
 
 # SETTINGS ==========================================
 
-# ~  Select participant and load data
-p <- "P03JJ" # single participant
-#p.codes <- c("P03JJ","P06SS","P07MG","P08UH","P10JL","P13NB") # case studies
-#p.codes <- c("daisy","violet","agapantha","anthurium","nasturtium") # pilot
-#for(p in p.codes){
-  P <- participants[[p]]
-  list2env(P, .GlobalEnv); remove(P)
-  d.study <- as.numeric(round(difftime(d.stop,d.start,units="days")))
-  datasets.all <- readRDS(paste0("M:/PhD_Folder/awear_bm/output_data/datasets_",p,".Rds"))
-#} 
-
-
 # ~  Define variables ----
   
 # Mobility:
@@ -72,7 +60,18 @@ win.size <- 15 # window size in minutes for...
 # Activity:
 acts <- c("Still", "Foot", "Vehicle", "Bicycle")
 
-  
+# ~  Select participant and load data
+
+p.codes <- "P03JJ" # single participant
+#p.codes <- c("P03JJ","P06SS","P07MG","P08UH","P10JL","P13NB") # case studies
+#p.codes <- c("daisy","violet","agapantha","anthurium","nasturtium") # pilot
+
+for(p in p.codes){
+  P <- participants[[p]]
+  list2env(P, .GlobalEnv); remove(P)
+  d.study <- as.numeric(round(difftime(d.stop,d.start,units="days")))
+  datasets.all <- readRDS(paste0("M:/PhD_Folder/awear_bm/output_data/datasets_",p,".Rds"))
+
 # MOBILITY  ==========================================
 
 # get data
@@ -98,8 +97,7 @@ source("./Rscripts/mod_steps.R") # calculate step counts by day
 steps.win <- pattern_steps(steps.watch %>% ungroup(), win.size = win.size) # counts steps by time windows over the day
 
 # clear environment
-remove(win.size, steps.log, steps.phone, steps.watch)
-
+remove(win.size, steps.log)
 
 # ACTIVITY ===========================
 
@@ -141,10 +139,10 @@ saveRDS(stepcounters,paste0("M:/PhD_Folder/awear_bm/output_data/steps_",p,".Rds"
 # total counts per day
 saveRDS(steps.totals,paste0("M:/PhD_Folder/awear_bm/output_data/steps_",p,".Rds"))
 
-
 # ~  Activity ----
 saveRDS(activity.bouts %>% mutate(participant=p),paste0("M:/PhD_Folder/awear_bm/output_data/activity_",p,".Rds"))
 
+}
 
 
 
