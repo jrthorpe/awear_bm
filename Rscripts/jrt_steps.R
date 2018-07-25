@@ -26,6 +26,6 @@ pattern_steps <- function(steps, win.size){
   steps %<>% mutate(window = ceiling(minute/win.size))
   win.totals <- steps %>% group_by(dates,window) %>% summarise(steps.win = sum(dstep))
   
-  return(list(steps, win.totals))
+  return(win.totals)
 
   }

@@ -84,25 +84,16 @@ mob.metrics <- get_metrics(traj.summary, gps.traj)
 # ~  Clear environment ----
 remove(loc.accuracy, dT, dD, time.threshold.stay, time.threshold.go, dist.threshold, Qd)
 
-# END ---
-
 # STEP COUNT ===========================
 
-#define variables
+# ~  Define variables ----
 win.size <- 15 # window size in minutes for...
 
-# step count log file
-steps.log <- datasets.all$step_count %>% 
-  filter(timestamp>=d.start, timestamp<=(d.start %m+% days(d.study))) %>% # get timeframe of just the day of interest
-  select(step_count, dsource, timestamp, intervals.alt, dates, times)
+# ~  Calculate step counts and bouts ----
+source("./Rscripts/mod_steps.R")
+steps.win <- pattern_steps(steps.watch %>% ungroup(), win.size = win.size) # counts steps by time windows over the day
 
-# for debugging/investigation
-# steps_vis(steps.log)
-# steps.log %>% count(dsource) 
-
-#** Daily total step counts -------
-steps.watch <- daily_steps(steps.log,"watch")
-steps.phone <- daily_steps(steps.log,"phone")
+# ~  Save steps results ----
 
 # # save a set with phone and watch counts over day
 # stepcounters <- rbind(steps.watch %>% ungroup() %>% select(dates, timestamp, stepcounter) %>% mutate(source="watch"),
@@ -110,34 +101,10 @@ steps.phone <- daily_steps(steps.log,"phone")
 #   mutate(participant = p)
 # saveRDS(stepcounters,paste0("M:/PhD_Folder/awear_bm/output_data/steps_",p,".Rds"))
 
-# daily totals #TODO:fix the merge-- fixed with all.x and all.y, not tested really yet.
-steps.totals <- merge(x=steps.watch %>% summarise(total = max(stepcounter)), 
-                      y=steps.phone %>% summarise(total = max(stepcounter)),
-                      by="dates", suffixes=c(".watch",".phone"), 
-                      all.x = TRUE, all.y = TRUE,
-                      incomparables = NA)
-saveRDS(steps.totals,paste0("M:/PhD_Folder/awear_bm/output_data/steps_",p,".Rds"))
+# saveRDS(steps.totals,paste0("M:/PhD_Folder/awear_bm/output_data/steps_",p,".Rds"))
 
-#** Extraction walking bouts from step counts -------
-
-# # probably won't be used besides to show that it is not feasible, since there
-# # are large gaps followed up large step count increases.
-# patterns <- pattern_steps(steps.watch %>% ungroup(), win.size = win.size)
-# 
-# plot_ly(
-#   patterns[[2]],
-#   x = ~ dates,
-#   y = ~ window,
-#   z = ~ steps.win,
-#   #zmin = 0,
-#   zmax = ~floor(quantile(steps.win, .99)),
-#   type = "heatmap",
-#   colorscale = "Greys"
-# )
-
-remove(win.size, steps.log,
-       steps.phone, steps.watch)
-# END
+# ~  Clear environment ----
+remove(win.size, steps.log, steps.phone, steps.watch)
 
 
 # ACTIVITY ===========================
