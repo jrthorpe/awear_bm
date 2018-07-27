@@ -50,9 +50,9 @@ When you click the **Knit** button a document will be generated that includes bo
 ```{r Define variables}
 
 # Select participant
-p.codes <- "P03JJ" # single participant
+#p.codes <- "P03JJ" # single participant
 #p.codes <- c("P03JJ","P06SS","P07MG","P08UH","P10JL","P13NB") # case studies
-#p.codes <- c("daisy","violet","agapantha","anthurium","nasturtium") # pilot
+p.codes <- c("daisy","violet","agapantha","anthurium","nasturtium") # pilot
 
 # Mobility:
 loc.accuracy <- 25 # threshold for accuracy of location points in meters
@@ -74,6 +74,8 @@ acts <- c("Still", "Foot", "Vehicle", "Bicycle")
 ```
 
 ## Feature extraction
+
+### Mobility Features
 
 ```{r MOBILITY}
 
@@ -102,12 +104,14 @@ p.metrics <- mob.metrics %>% select(dates, Tt.out, N.places) %>%
   mutate(day=c(1:nrow(mob.metrics)), participant = p)
 saveRDS(p.metrics,paste0("M:/PhD_Folder/awear_bm/output_data/metrics_",p,".Rds"))
 
+}
+
+
 # clear environment
 remove(loc.accuracy, dT, dD, time.threshold.stay, time.threshold.go, dist.threshold, Qd)
-}
 ```
 
-## Feature extraction
+### Steps
 
 ```{r STEPS}
 
@@ -135,14 +139,13 @@ saveRDS(stepcounters,paste0("M:/PhD_Folder/awear_bm/output_data/stepcounters_",p
 # total counts per day
 saveRDS(steps.totals,paste0("M:/PhD_Folder/awear_bm/output_data/steptotals_",p,".Rds"))
 
-# clear environment
-remove(win.size, steps.log)
-
 } 
 
+# clear environment
+remove(win.size, steps.log)
 ```
 
-### subtitle
+### Activity Features
 
 ```{r ACTIVITY}
 

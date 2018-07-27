@@ -27,11 +27,11 @@ act.algorithm <- rbind.data.frame(readRDS("M:/PhD_Folder/awear_bm/output_data/ac
                                    readRDS("M:/PhD_Folder/awear_bm/output_data/activity_agapantha.Rds"),
                                    readRDS("M:/PhD_Folder/awear_bm/output_data/activity_anthurium.Rds")) %>% ungroup()
 
-stepcounters <- rbind.data.frame(readRDS("M:/PhD_Folder/awear_bm/output_data/steps_daisy.Rds"),
-                                  readRDS("M:/PhD_Folder/awear_bm/output_data/steps_violet.Rds"),
-                                  #readRDS("M:/PhD_Folder/awear_bm/output_data/steps_nasturtium.Rds"), # still need Nina's logsheets updated
-                                  readRDS("M:/PhD_Folder/awear_bm/output_data/steps_agapantha.Rds"),
-                                  readRDS("M:/PhD_Folder/awear_bm/output_data/steps_anthurium.Rds"))
+stepcounters <- rbind.data.frame(readRDS("M:/PhD_Folder/awear_bm/output_data/stepcounters_daisy.Rds"),
+                                  readRDS("M:/PhD_Folder/awear_bm/output_data/stepcounters_violet.Rds"),
+                                  #readRDS("M:/PhD_Folder/awear_bm/output_data/stepcounters_nasturtium.Rds"), # still need Nina's logsheets updated
+                                  readRDS("M:/PhD_Folder/awear_bm/output_data/stepcounters_agapantha.Rds"),
+                                  readRDS("M:/PhD_Folder/awear_bm/output_data/stepcounters_anthurium.Rds"))
 
 
 
