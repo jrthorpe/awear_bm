@@ -11,38 +11,7 @@ p.codes <- c("daisy","violet","agapantha","anthurium","nasturtium") # pilot
 # Adapted from Luna's file "AWEAR_Logsheet_Testing.R"
 
 # ** Load data files ----
-
-# Sensor data results:
-traj.algorithm <- rbind.data.frame(readRDS("M:/PhD_Folder/awear_bm/output_data/traj_daisy.Rds"),
-                                   readRDS("M:/PhD_Folder/awear_bm/output_data/traj_violet.Rds"),
-                                   #readRDS("M:/PhD_Folder/awear_bm/output_data/traj_nasturtium.Rds"), # still need Nina's logsheets updated
-                                   readRDS("M:/PhD_Folder/awear_bm/output_data/traj_agapantha.Rds"),
-                                   readRDS("M:/PhD_Folder/awear_bm/output_data/traj_anthurium.Rds")
-                                   )
-attributes(traj.algorithm$T.end) <- attributes(traj.algorithm$T.start) #otherwise different from T.start (no clue why), which causes problems when merged
-
-act.algorithm <- rbind.data.frame(readRDS("M:/PhD_Folder/awear_bm/output_data/activity_daisy.Rds"),
-                                   readRDS("M:/PhD_Folder/awear_bm/output_data/activity_violet.Rds"),
-                                   #readRDS("M:/PhD_Folder/awear_bm/output_data/activity_nasturtium.Rds"), # still need Nina's logsheets updated
-                                   readRDS("M:/PhD_Folder/awear_bm/output_data/activity_agapantha.Rds"),
-                                   readRDS("M:/PhD_Folder/awear_bm/output_data/activity_anthurium.Rds")) %>% ungroup()
-
-stepcounters <- rbind.data.frame(readRDS("M:/PhD_Folder/awear_bm/output_data/stepcounters_daisy.Rds"),
-                                  readRDS("M:/PhD_Folder/awear_bm/output_data/stepcounters_violet.Rds"),
-                                  #readRDS("M:/PhD_Folder/awear_bm/output_data/stepcounters_nasturtium.Rds"), # still need Nina's logsheets updated
-                                  readRDS("M:/PhD_Folder/awear_bm/output_data/stepcounters_agapantha.Rds"),
-                                  readRDS("M:/PhD_Folder/awear_bm/output_data/stepcounters_anthurium.Rds"))
-
-
-
-# Logsheet results:
-traj.logsheets <- read_excel(paste("M:/PhD_Folder/Pilot2018/AWEAR_Logsheet_Testing/logsheets_combined.xlsx",sep=""),col_names = TRUE,
-                      col_types = c("text","date","date","date","text","text","text")) 
-traj.logsheets %<>%
-  mutate(Start = as.POSIXct(paste(traj.logsheets$Date, format(traj.logsheets$Start, "%H:%M:%S")), format="%Y-%m-%d %H:%M:%S"),
-         End = as.POSIXct(paste(traj.logsheets$Date, format(traj.logsheets$End, "%H:%M:%S")), format="%Y-%m-%d %H:%M:%S"),
-         dates = as.Date(Date))
-colnames(traj.logsheets)[1] <- "StayGo"
+source("./Rscripts/pilot_data_load.R")
 
 
 # moved from JRT testing area:
@@ -145,55 +114,6 @@ for(i in 1:length(period)){
   
   plotlist[[i]] <- subplot(tmp.traj, tmp.act, tmp.steps, nrows=3, shareX = TRUE)
   
-  # # Plot both on same axes instead of subplot:
-  # # Create plot of results
-  # #tmp.combo <- 
-  #   plot_ly(data = log.data %>% arrange(event,Time),
-  #                     x=~Time,
-  #                     y=~StayGo,
-  #                     type = "scatter",
-  #                     mode = "lines",
-  #                     line = list(color = "red"),
-  #                     name = "Logsheet results") %>%
-  #   add_trace(data = alg.data %>% arrange(event,Time),
-  #             x=~Time,
-  #             y=~StayGo,
-  #             line = list(dash = "dot",color = "blue"),
-  #             name = "Algorithm results") %>%
-  #   add_trace(data = act.data %>% filter(activity == "Still"),
-  #             x = ~value, #NOTE: this does not display the time properly, irregular intervals are spread regularly
-  #             #y = ~dates,
-  #             type = "scatter",
-  #             mode = "lines",
-  #             line = list(color = "grey", width = 2),
-  #             name = "Still") %>%
-  #   add_trace(data = act.data %>% filter(activity == "Foot"),
-  #             x = ~value,
-  #             #y = ~dates,
-  #             type = "scatter",
-  #             mode = "lines",
-  #             opacity = 0.5,
-  #             line = list(color = "red", width = 20),
-  #             name = "On Foot") %>%
-  #   add_trace(data = act.data %>% filter(activity == "Bicycle"),
-  #             x = ~value,
-  #             #y = ~dates,
-  #             type = "scatter",
-  #             mode = "lines",
-  #             opacity = 0.5,
-  #             line = list(color = "blue", width = 20),
-  #             name = "Bicycle") %>%
-  #   add_trace(data = act.data %>% filter(activity == "Vehicle"),
-  #             x = ~value,
-  #             #y = ~dates,
-  #             type = "scatter",
-  #             mode = "lines",
-  #             opacity = 0.5,
-  #             line = list(color = "green", width = 20),
-  #             name = "Vehicle")
-  # 
-  # #plotlist[[i]] <- tmp.combo
-  
 }
 
 subplot(plotlist, nrows = length(period))
@@ -206,18 +126,6 @@ plotlist[[5]]
 plotlist[[6]]
 plotlist[[7]]
 plotlist[[8]]
-
-# ACTIVITY BOUTS ----
-
-
-
-
-
-
-
-
-
-# STEP COUNT ----
 
 
 
@@ -324,6 +232,59 @@ subplot(plot_list[c(1:4)], nrows = (N-1)/2, margin=0.08) # for 2 columns use cei
 #   y = 1,
 #   showarrow = FALSE
 # )
+
+
+
+
+
+# # Plot both on same axes instead of subplot:
+# # Create plot of results
+# #tmp.combo <- 
+#   plot_ly(data = log.data %>% arrange(event,Time),
+#                     x=~Time,
+#                     y=~StayGo,
+#                     type = "scatter",
+#                     mode = "lines",
+#                     line = list(color = "red"),
+#                     name = "Logsheet results") %>%
+#   add_trace(data = alg.data %>% arrange(event,Time),
+#             x=~Time,
+#             y=~StayGo,
+#             line = list(dash = "dot",color = "blue"),
+#             name = "Algorithm results") %>%
+#   add_trace(data = act.data %>% filter(activity == "Still"),
+#             x = ~value, #NOTE: this does not display the time properly, irregular intervals are spread regularly
+#             #y = ~dates,
+#             type = "scatter",
+#             mode = "lines",
+#             line = list(color = "grey", width = 2),
+#             name = "Still") %>%
+#   add_trace(data = act.data %>% filter(activity == "Foot"),
+#             x = ~value,
+#             #y = ~dates,
+#             type = "scatter",
+#             mode = "lines",
+#             opacity = 0.5,
+#             line = list(color = "red", width = 20),
+#             name = "On Foot") %>%
+#   add_trace(data = act.data %>% filter(activity == "Bicycle"),
+#             x = ~value,
+#             #y = ~dates,
+#             type = "scatter",
+#             mode = "lines",
+#             opacity = 0.5,
+#             line = list(color = "blue", width = 20),
+#             name = "Bicycle") %>%
+#   add_trace(data = act.data %>% filter(activity == "Vehicle"),
+#             x = ~value,
+#             #y = ~dates,
+#             type = "scatter",
+#             mode = "lines",
+#             opacity = 0.5,
+#             line = list(color = "green", width = 20),
+#             name = "Vehicle")
+# 
+# #plotlist[[i]] <- tmp.combo
 
 
 

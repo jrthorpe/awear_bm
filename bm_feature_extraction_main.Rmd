@@ -33,6 +33,9 @@ library(fpc)
 library(dbscan)
 library(factoextra)
 
+# For reading in pilot data
+library("readxl")
+
 # Load custom functions:
 source("./Rscripts/jrt_utils.R")
 source("./Rscripts/jrt_mobility.R")
@@ -177,4 +180,21 @@ saveRDS(activity.bouts %>% mutate(participant=p),paste0("M:/PhD_Folder/awear_bm/
 
 ```
 
+## Evaluation - Pilot 
+
+```{r pilot}
+
+# Load pilot data
+# note: Logsheest activities will be annotated, no logsheet step data.
+source("./Rscripts/pilot_data_load.R")
+
+```
+
+Plots results per participant per day.
+
+```{r pilot plots}
+
+
+
+```
 
