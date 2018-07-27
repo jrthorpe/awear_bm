@@ -116,15 +116,15 @@ restructure <- function(dat, userid, d.start, d.stop) {
     dat$label<-unlist(act.list[as.character(dat$activity)])
     cat("Complete: column 'label' created describing activity based on activity code \n");
     
-    # Keep only the entries with max confidence for each timestamp (can still result in multiple activities per timestamp if several at same time have same (max) confidence)
-    before <- nrow(dat)
-    dat %<>%
-      group_by(timestamp) %>%
-      filter(confidence == max(confidence)) %>%
-      ungroup() %>%
-      as.data.frame()
-    after <- nrow(dat)
-    cat("Complete: activity data reduced from ", before, " to ", after, " rows by keeping only the max-confidence activities for each unique timestamp \n");
+    # # Keep only the entries with max confidence for each timestamp (can still result in multiple activities per timestamp if several at same time have same (max) confidence)
+    # before <- nrow(dat)
+    # dat %<>%
+    #   group_by(timestamp) %>%
+    #   filter(confidence == max(confidence)) %>%
+    #   ungroup() %>%
+    #   as.data.frame()
+    # after <- nrow(dat)
+    # cat("Complete: activity data reduced from ", before, " to ", after, " rows by keeping only the max-confidence activities for each unique timestamp \n");
   }
   
   if("plugged" %in% colnames(dat)){

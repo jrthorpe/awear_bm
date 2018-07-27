@@ -160,8 +160,18 @@ for(p in p.codes){
   
 # get data
 activity.log <- datasets.all$activity %>% filter(label %in% acts)
-#   filter(times > as.POSIXct(x="06:00:00",format="%H:%M:%S",tz="CET"),  # To look at only "active" time of day
+# To look at only "active" time of day
+#   filter(times > as.POSIXct(x="06:00:00",format="%H:%M:%S",tz="CET"),  
 #          times < as.POSIXct(x="22:00:00",format="%H:%M:%S",tz="CET"))
+
+# Keep only the entries with max confidence for each timestamp (can still result in multiple activities per timestamp if several at same time have same (max) confidence)
+before <- nrow(activity.log)
+activity.log %<>% 
+  group_by(timestamp) %>% filter(confidence == max(confidence)) %>% 
+  ungroup() %>% as.data.frame()
+after <- nrow(activity.log)
+cat("Complete: activity data reduced by ", 100*after/before, "% by keeping only the confidence > 50% activities for each unique timestamp \n");
+
 
 # calculate bouts
 activity.bouts <- activity_bouts(activity.log, acts); remove(activity.log)
@@ -170,8 +180,6 @@ activity.bouts <- activity_bouts(activity.log, acts); remove(activity.log)
 activity.bouts.pday <- activity.bouts %>% group_by(dates, activity) %>% 
   summarise(total.time =  sum(duration), N = n()) %>%
   mutate(mean.duration = total.time/N)
-
-remove(acts)
 
 # save results
 saveRDS(activity.bouts %>% mutate(participant=p),paste0("M:/PhD_Folder/awear_bm/output_data/activity_",p,".Rds"))
@@ -188,13 +196,13 @@ saveRDS(activity.bouts %>% mutate(participant=p),paste0("M:/PhD_Folder/awear_bm/
 # note: Logsheest activities will be annotated, no logsheet step data.
 source("./Rscripts/pilot_data_load.R")
 
-p.codes <- c("daisy","violet","agapantha","anthurium","nasturtium") # pilot
+p.codes <- c("agapantha") #c("daisy","violet","agapantha","anthurium") # pilot
 for(p in p.codes){
   
-  traj.logsheets.p <- traj.logsheets %>% filter(participant==p.code)
-  traj.algorithm.p <- traj.algorithm %>% filter(participant==p.code)
-  act.algorithm.p <- act.algorithm %>% filter(participant==p.code)
-  stepcounters.p <- stepcounters %>% filter(participant==p.code)
+  traj.logsheets.p <- traj.logsheets %>% filter(participant==p)
+  traj.algorithm.p <- traj.algorithm %>% filter(participant==p)
+  act.algorithm.p <- act.algorithm %>% filter(participant==p)
+  stepcounters.p <- stepcounters %>% filter(participant==p)
   
   overlap <- unique(traj.algorithm.p$dates) %in% unique(traj.logsheets.p$dates)
   period <- unique(traj.algorithm.p$dates)[overlap]
@@ -210,41 +218,46 @@ for(p in p.codes){
   tmp.traj <- plot_ly(data = log.data %>% arrange(event,Time),
         x=~Time, y=~StayGo,
         type = "scatter", mode = "lines", line = list(color = "red"),
-        name = "Logsheet results") %>%
+        legendgroup = "Trajectories", name = "Logsheet results") %>%
   add_trace(data = alg.data %>% arrange(event,Time),
             x=~Time, y=~StayGo,
             line = list(dash = "dot",color = "blue"),
-            name = "Algorithm results") 
+            legendgroup = "Trajectories", name = "Algorithm results")  %>%
+    layout(yaxis=list(title=" "), margin = list(l = 50, r = 50, b = 50, t = 50, pad = 4))
    
   # activities plot
   tmp.act <- plot_ly(data = act.data %>% filter(activity == "Still"),
           x = ~value, y = ~dates,
           type = "scatter", mode = "lines", line = list(color = "grey", width = 2),
-          name = "Still") %>%
+          legendgroup = "Activity", name = "Still") %>%
     add_trace(data = act.data %>% filter(activity == "Foot"),
               x = ~value, y = ~dates,
               type ="scatter", mode="lines",
               opacity=0.5, line=list(color="red", width=20),
-              name = "On Foot") %>%
+              legendgroup = "Activity", name = "On Foot") %>%
     add_trace(data = act.data %>% filter(activity=="Bicycle"),
               x = ~value, y = ~dates,
               type = "scatter", mode = "lines",
               opacity = 0.5, line = list(color = "blue", width = 20),
-              name = "Bicycle") %>%
+              legendgroup = "Activity", name = "Bicycle") %>%
     add_trace(data = act.data %>% filter(activity == "Vehicle"),
               x = ~value, y = ~dates,
               type = "scatter", mode = "lines",
               opacity = 0.5, line = list(color = "green", width = 20),
-              name = "Vehicle")
+              legendgroup = "Activity", name = "Vehicle") %>%
+    layout(yaxis=list(title="Activity", showticklabels = FALSE), margin = list(l = 50, r = 50, b = 50, t = 50, pad = 4))
+
   # steps plot
   tmp.steps <- plot_ly(stepcounters.p %>% filter(dates==d) %>% group_by(source),
           x = ~timestamp, y = ~stepcounter,
           type = "scatter", mode = "lines+markers",
-          color = ~source, colors = c("lightgreen","lightblue"))
+          color = ~source, colors = c("lightgreen","lightblue"),
+          legendgroup = "Steps", name = "source")  %>%
+    layout(yaxis=list(title="Step count"), margin = list(l = 50, r = 50, b = 50, t = 50, pad = 4))
   
-  print(subplot(tmp.traj, tmp.act, tmp.steps, nrows=3, shareX = TRUE))
+  print(subplot(tmp.traj, tmp.act, tmp.steps, nrows=3, shareX = TRUE, titleY = TRUE))
   # join plots in a subplot
-  plotlist[[i]] <- subplot(tmp.traj, tmp.act, tmp.steps, nrows=3, shareX = TRUE)
+  plotlist[[i]] <- subplot(tmp.traj, tmp.act, tmp.steps, nrows=3, shareX = TRUE) 
   }
 
 }
