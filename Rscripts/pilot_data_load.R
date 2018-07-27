@@ -46,10 +46,11 @@ pilot_data_bydate <- function(traj.logsheets.p, traj.algorithm.p, act.algorithm.
   
   # Logsheet data: select date and manipulate dataset to get into useful format
   log.data <- traj.logsheets.p %>% filter(dates==d) %>%
-    select(dates, StayGo, Start, End)
+    select(dates, StayGo, Start, End, Mode)
   log.data %<>%
     mutate(event=c(1:nrow(log.data))) %>% # changed from "rownames" to get numeric
-    melt(id.vars=c("dates", "StayGo", "event"), value.name = "Time")
+    melt(id.vars=c("dates", "StayGo", "event", "Mode"), value.name = "Time")
+  log.data[log.data$variable=="End", "Mode"] <- NA #only keep mode information at start to avoid duplicate text in plots
   
   # Algorithm data: select date and manipulate dataset to get into useful format
   alg.data <- traj.algorithm.p %>% filter(dates==d) %>%

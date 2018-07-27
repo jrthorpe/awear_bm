@@ -170,7 +170,7 @@ activity.log %<>%
   group_by(timestamp) %>% filter(confidence == max(confidence)) %>% 
   ungroup() %>% as.data.frame()
 after <- nrow(activity.log)
-cat("Complete: activity data reduced by ", 100*after/before, "% by keeping only the confidence > 50% activities for each unique timestamp \n");
+cat("Complete: activity data reduced by ", 100*after/before, "% by keeping only the max confidence for each unique timestamp \n");
 
 
 # calculate bouts
@@ -196,7 +196,7 @@ saveRDS(activity.bouts %>% mutate(participant=p),paste0("M:/PhD_Folder/awear_bm/
 # note: Logsheest activities will be annotated, no logsheet step data.
 source("./Rscripts/pilot_data_load.R")
 
-p.codes <- c("agapantha") #c("daisy","violet","agapantha","anthurium") # pilot
+p.codes <- c("daisy","violet","agapantha","anthurium") # pilot
 for(p in p.codes){
   
   traj.logsheets.p <- traj.logsheets %>% filter(participant==p)
@@ -223,6 +223,8 @@ for(p in p.codes){
             x=~Time, y=~StayGo,
             line = list(dash = "dot",color = "blue"),
             legendgroup = "Trajectories", name = "Algorithm results")  %>%
+    add_text(data = log.data, x=~Time, y=~StayGo, text = ~Mode, name = "Logged transport mode", inherit=FALSE, 
+              textposition = "bottom center", textfont = list(color = '#000000', size = 12)) %>%
     layout(yaxis=list(title=" "), margin = list(l = 50, r = 50, b = 50, t = 50, pad = 4))
    
   # activities plot
