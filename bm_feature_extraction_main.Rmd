@@ -188,13 +188,69 @@ saveRDS(activity.bouts %>% mutate(participant=p),paste0("M:/PhD_Folder/awear_bm/
 # note: Logsheest activities will be annotated, no logsheet step data.
 source("./Rscripts/pilot_data_load.R")
 
+p.codes <- c("daisy","violet","agapantha","anthurium","nasturtium") # pilot
+for(p in p.codes){
+  
+  traj.logsheets.p <- traj.logsheets %>% filter(participant==p.code)
+  traj.algorithm.p <- traj.algorithm %>% filter(participant==p.code)
+  act.algorithm.p <- act.algorithm %>% filter(participant==p.code)
+  stepcounters.p <- stepcounters %>% filter(participant==p.code)
+  
+  overlap <- unique(traj.algorithm.p$dates) %in% unique(traj.logsheets.p$dates)
+  period <- unique(traj.algorithm.p$dates)[overlap]
+  plotlist <- list()
+  
+  for(i in 1:length(period)){
+  
+  d <- period[i]
+  data.d <- pilot_data_bydate(traj.logsheets.p, traj.algorithm.p, act.algorithm.p, d)
+  list2env(data.d, .GlobalEnv); remove(data.d)
+  
+  # trajectories plot
+  tmp.traj <- plot_ly(data = log.data %>% arrange(event,Time),
+        x=~Time, y=~StayGo,
+        type = "scatter", mode = "lines", line = list(color = "red"),
+        name = "Logsheet results") %>%
+  add_trace(data = alg.data %>% arrange(event,Time),
+            x=~Time, y=~StayGo,
+            line = list(dash = "dot",color = "blue"),
+            name = "Algorithm results") 
+   
+  # activities plot
+  tmp.act <- plot_ly(data = act.data %>% filter(activity == "Still"),
+          x = ~value, y = ~dates,
+          type = "scatter", mode = "lines", line = list(color = "grey", width = 2),
+          name = "Still") %>%
+    add_trace(data = act.data %>% filter(activity == "Foot"),
+              x = ~value, y = ~dates,
+              type ="scatter", mode="lines",
+              opacity=0.5, line=list(color="red", width=20),
+              name = "On Foot") %>%
+    add_trace(data = act.data %>% filter(activity=="Bicycle"),
+              x = ~value, y = ~dates,
+              type = "scatter", mode = "lines",
+              opacity = 0.5, line = list(color = "blue", width = 20),
+              name = "Bicycle") %>%
+    add_trace(data = act.data %>% filter(activity == "Vehicle"),
+              x = ~value, y = ~dates,
+              type = "scatter", mode = "lines",
+              opacity = 0.5, line = list(color = "green", width = 20),
+              name = "Vehicle")
+  # steps plot
+  tmp.steps <- plot_ly(stepcounters.p %>% filter(dates==d) %>% group_by(source),
+          x = ~timestamp, y = ~stepcounter,
+          type = "scatter", mode = "lines+markers",
+          color = ~source, colors = c("lightgreen","lightblue"))
+  
+  print(subplot(tmp.traj, tmp.act, tmp.steps, nrows=3, shareX = TRUE))
+  # join plots in a subplot
+  plotlist[[i]] <- subplot(tmp.traj, tmp.act, tmp.steps, nrows=3, shareX = TRUE)
+  }
+
+}
+
+
 ```
 
-Plots results per participant per day.
 
-```{r pilot plots}
-
-
-
-```
 
