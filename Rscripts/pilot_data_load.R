@@ -38,3 +38,36 @@ traj.logsheets %<>%
          End = as.POSIXct(paste(traj.logsheets$Date, format(traj.logsheets$End, "%H:%M:%S")), format="%Y-%m-%d %H:%M:%S"),
          dates = as.Date(Date))
 colnames(traj.logsheets)[1] <- "StayGo"
+
+
+# Getting data for a specific date from a single participipants data:
+
+pilot_data_bydate <- function(traj.logsheets.p, traj.algorithm.p, act.algorithm.p, d){
+  
+  # Logsheet data: select date and manipulate dataset to get into useful format
+  log.data <- traj.logsheets.p %>% filter(dates==d) %>%
+    select(dates, StayGo, Start, End)
+  log.data %<>%
+    mutate(event=c(1:nrow(log.data))) %>% # changed from "rownames" to get numeric
+    melt(id.vars=c("dates", "StayGo", "event"), value.name = "Time")
+  
+  # Algorithm data: select date and manipulate dataset to get into useful format
+  alg.data <- traj.algorithm.p %>% filter(dates==d) %>%
+    mutate(StayGo = ifelse(is.stay==1,"Stay","Go"))%>%
+    select(dates, StayGo, T.start, T.end)
+  alg.data %<>%
+    mutate(event=c(1:nrow(alg.data))) %>%
+    melt(id.vars=c("dates", "StayGo", "event"), value.name = "Time")
+  
+  # Activity ----
+  act.data <- act.algorithm.p %>% filter(dates==d) %>%
+    melt(id.vars = c("dates","bout","activity"), 
+         measure.vars = c("b.start","b.end")) %>% 
+    group_by(activity, bout) %>%
+    mutate(StayGo = "Activity") #for same plot option below
+  
+  
+  return(list(log.data=log.data, alg.data=alg.data, act.data=act.data))
+}
+
+

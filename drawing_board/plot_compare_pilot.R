@@ -32,83 +32,45 @@ plotlist <- list()
 
 for(i in 1:length(period)){
   #i<-1
-  # Logsheet data: select date and manipulate dataset to get into useful format
-  d <- period[i] 
-  log.data <- traj.logsheets.p %>% filter(dates==d) %>%
-    select(dates, StayGo, Start, End)
   
-  log.data %<>%
-    mutate(event=c(1:nrow(log.data))) %>% # changed from "rownames" to get numeric
-    melt(id.vars=c("dates", "StayGo", "event"), value.name = "Time")
+  d <- period[i]
   
-  # Algorithm data: select date and manipulate dataset to get into useful format
-  alg.data <- traj.algorithm.p %>% filter(dates==d) %>%
-    mutate(StayGo = ifelse(is.stay==1,"Stay","Go"))%>%
-    select(dates, StayGo, T.start, T.end)
-  
-  alg.data %<>%
-    mutate(event=c(1:nrow(alg.data))) %>%
-    melt(id.vars=c("dates", "StayGo", "event"), value.name = "Time")
+  data.d <- pilot_data_bydate(traj.logsheets.p, traj.algorithm.p, act.algorithm.p, d)
+  list2env(data.d, .GlobalEnv); remove(data.d)
   
   # Create plot of results
   tmp.traj <- plot_ly(data = log.data %>% arrange(event,Time),
-        x=~Time,
-        y=~StayGo,
-        type = "scatter",
-        mode = "lines",
-        line = list(color = "red"),
+        x=~Time, y=~StayGo,
+        type = "scatter", mode = "lines", line = list(color = "red"),
         name = "Logsheet results") %>%
   add_trace(data = alg.data %>% arrange(event,Time),
-            x=~Time,
-            y=~StayGo,
+            x=~Time, y=~StayGo,
             line = list(dash = "dot",color = "blue"),
             name = "Algorithm results") 
-  
-  # Activity ----
-  #d <- act.algorithm.p$dates[1] #temp, while developing
-  act.data <- act.algorithm.p %>% filter(dates==d) %>%
-  melt(id.vars = c("dates","bout","activity"), 
-                    measure.vars = c("b.start","b.end")) %>% 
-    group_by(activity, bout) %>%
-    mutate(StayGo = "Activity") #for same plot option below
-  
+ 
   tmp.act <- plot_ly(data = act.data %>% filter(activity == "Still"),
-          x = ~value, #NOTE: this does not display the time properly, irregular intervals are spread regularly
-          y = ~dates,
-          type = "scatter",
-          mode = "lines",
-          line = list(color = "grey", width = 2),
+          x = ~value, y = ~dates,
+          type = "scatter", mode = "lines", line = list(color = "grey", width = 2),
           name = "Still") %>%
     add_trace(data = act.data %>% filter(activity == "Foot"),
-              x = ~value,
-              y = ~dates,
-              type = "scatter",
-              mode = "lines",
-              opacity = 0.5,
-              line = list(color = "red", width = 20),
+              x = ~value, y = ~dates,
+              type ="scatter", mode="lines",
+              opacity=0.5, line=list(color="red", width=20),
               name = "On Foot") %>%
-    add_trace(data = act.data %>% filter(activity == "Bicycle"),
-              x = ~value,
-              y = ~dates,
-              type = "scatter",
-              mode = "lines",
-              opacity = 0.5,
-              line = list(color = "blue", width = 20),
+    add_trace(data = act.data %>% filter(activity=="Bicycle"),
+              x = ~value, y = ~dates,
+              type = "scatter", mode = "lines",
+              opacity = 0.5, line = list(color = "blue", width = 20),
               name = "Bicycle") %>%
     add_trace(data = act.data %>% filter(activity == "Vehicle"),
-              x = ~value,
-              y = ~dates,
-              type = "scatter",
-              mode = "lines",
-              opacity = 0.5,
-              line = list(color = "green", width = 20),
+              x = ~value, y = ~dates,
+              type = "scatter", mode = "lines",
+              opacity = 0.5, line = list(color = "green", width = 20),
               name = "Vehicle")
   
   tmp.steps <- plot_ly(stepcounters.p %>% filter(dates==d) %>% group_by(source),
-          x = ~timestamp,
-          y = ~stepcounter,
-          type = "scatter",
-          mode = "lines+markers",
+          x = ~timestamp, y = ~stepcounter,
+          type = "scatter", mode = "lines+markers",
           color = ~source)
   
   
