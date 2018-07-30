@@ -1,4 +1,50 @@
-# Activity results compared to Questionnaire:
+# RELATION TO QUESTIONNAIRES ----
+
+
+# Calculate required variables ----
+
+# ** Mobility Zones ----
+# mobility boundary crossings based on the mobility baseline questionnaire:
+# counts the number of times the person leaves a certain radius around their home
+# levels: daily, 4-6 per week, 1-3 per week, less than 1
+# TODO: fix this so it is not like every small trip at work is another additional trip out of town. -- done, only need in form TRUE/FALSE per day
+
+mobility.zones <- traj.summary %>%
+  mutate(zone = cut(action.range, breaks = c(0,25, 50, 1000, 10000,Inf), 
+                    labels = c("mz1", "mz2", "mz3", "mz4", "mz5"))) %>%
+  group_by(dates, zone) %>%
+  summarize(entry = n()>0)%>% 
+  ungroup() %>% 
+  dcast(dates~zone,value.var="entry") %>%
+  mutate(dweek = (as.numeric(dates-dates[1])) %/% 7)
+
+#saveRDS(mobility.zones,paste0("M:/PhD_Folder/awear_bm/output_data/mobilityzones_",p,".Rds"))
+
+
+# ** Activity Patterns/Levels ----
+
+# Transport:
+# vehicle, bicycle, foot>moves: days/week
+
+# Active time (not for transport):
+# foot > stays+moves > hrs/day
+# step count?
+
+# sedentary bouts:
+# still > stays
+
+# indicate whether activity bouts overlap with a move
+activity.moves <- bout_moves(activity.bouts, traj.summary)
+
+# daily summary for activity bouts with stay/move information 
+activity.moves.pday <- activity.moves %>% 
+  group_by(dates, activity, moving) %>% 
+  summarise(total.time = sum(duration))
+
+#saveRDS(activity.moves.pday,paste0("M:/PhD_Folder/awear_bm/output_data/activitymoves_",p,".Rds"))
+
+
+# Create the comparison plots ----
 
 # define variables:
 p.codes <- c("P03JJ","P06SS","P07MG","P08UH","P10JL","P13NB")
@@ -47,7 +93,7 @@ mz.list <- list(P03JJ = readRDS("./output_data/mobilityzones_P03JJ.Rds"),
 mz.plot_list = vector("list",length(mz.list))
 for(i in 1:length(mz.list)){
 
-  #<-1 #debug
+  #i<-1 #debug
   p.code <- p.codes[i] # get participant code
   mz.dat <- mz.list[[p.code]] # use participant code to ensure matching data
   
