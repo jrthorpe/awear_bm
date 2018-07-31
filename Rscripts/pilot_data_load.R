@@ -29,6 +29,18 @@ stepcounters <-
     readRDS("M:/PhD_Folder/awear_bm/output_data/stepcounters_anthurium.Rds")
   )
 
+
+# metrics results: (old file location CaseStudies/Data_analysis/output)
+metrics.algorithm <- rbind.data.frame(readRDS("M:/PhD_Folder/awear_bm/output_data/metrics_daisy.Rds"),
+                                      readRDS("M:/PhD_Folder/awear_bm/output_data/metrics_violet.Rds"),
+                                      readRDS("M:/PhD_Folder/awear_bm/output_data/metrics_agapantha.Rds"),
+                                      readRDS("M:/PhD_Folder/awear_bm/output_data/metrics_anthurium.Rds"),
+                                      readRDS("M:/PhD_Folder/awear_bm/output_data/nina_metrics.Rds")
+)
+metrics.algorithm$day <- NULL # Day set in the logsheets instead
+
+
+
 # Logsheet results:
 traj.logsheets <- 
   read_excel(paste("M:/PhD_Folder/Pilot2018/AWEAR_Logsheet_Testing/logsheets_combined.xlsx",sep=""),col_names = TRUE,
@@ -38,6 +50,25 @@ traj.logsheets %<>%
          End = as.POSIXct(paste(traj.logsheets$Date, format(traj.logsheets$End, "%H:%M:%S")), format="%Y-%m-%d %H:%M:%S"),
          dates = as.Date(Date))
 colnames(traj.logsheets)[1] <- "StayGo"
+
+
+# Imported manually (from environment panel) once-off then saved for all future use
+#saveRDS(metrics_logsheets_pseudonymised,"M:/PhD_Folder/CaseStudies/Data_analysis/output/metrics_logsheets.Rds")
+metrics.logsheets <- readRDS("M:/PhD_Folder/CaseStudies/Data_analysis/output/metrics_logsheets.Rds")
+
+# Combine metrics results from logsheets and algorithm for comparison:
+metrics.combined <- merge(metrics.algorithm, metrics.logsheets,
+                          by=c("dates","participant"),
+                          all = TRUE) %>% 
+  filter(Day>0,Day<8)
+metrics.compare.alg <- metrics.combined %>% select(dates,Day,participant,N.places, Tt.out) %>% mutate(results="algorithm")
+metrics.compare.log <- metrics.combined %>% select(dates,Day,participant) %>%
+  mutate(N.places=metrics.combined$N.places.logs, Tt.out = metrics.combined$Tt.out.logs, results="logsheets")
+metrics.compare <- rbind(metrics.compare.alg,metrics.compare.log)
+
+
+
+
 
 
 # Getting data for a specific date from a single participipants data:

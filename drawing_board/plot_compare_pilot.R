@@ -162,7 +162,7 @@ for(i in 1:N){
   plot_list[[i]] <- sp
 }
 
-subplot(plot_list[c(1:4)], nrows = (N-1)/2, margin=0.08) # for 2 columns use ceiling(i/2)
+subplot(plot_list, nrows = (N-1)/2, margin=0.08) # for 2 columns use ceiling(i/2)
 
 # END metrics comparison
 
