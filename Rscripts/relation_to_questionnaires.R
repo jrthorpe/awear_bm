@@ -1,5 +1,7 @@
 # RELATION TO QUESTIONNAIRES ----
 
+# !!! NOT IN USE !!! 
+# Was moved to "assessment_vs_sensor" and consequently worked into main Rmd analysis script
 
 # ** Mobility Zones ----
 # mobility boundary crossings based on the mobility baseline questionnaire:
