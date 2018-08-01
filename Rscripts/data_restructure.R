@@ -51,8 +51,8 @@ source("./Rscripts/users.R")
   #              "steps")
 
 
-# p.codes <- c("P03JJ","P06SS","P07MG","P08UH","P10JL","P13NB") # case studies
-p.codes <- c("daisy","violet","agapantha","anthurium","nasturtium") # pilot
+p.codes <- c("P03JJ","P06SS","P07MG","P08UH","P10JL","P13NB") # case studies
+#p.codes <- c("daisy","violet","agapantha","anthurium","nasturtium") # pilot
 for (p in p.codes) {
   
   P <- participants[[p]]
