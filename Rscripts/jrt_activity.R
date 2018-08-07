@@ -34,8 +34,11 @@ bout_info <- function(bouts){
     summarize( activity = label[1],
                b.start = min(timestamp), b.end = max(timestamp),
                mean.conf = mean(confidence),
-               size = n()) %>%
-    mutate(duration = ifelse(size > 1, difftime(b.end, b.start, units ="mins"), 5))
+               size = n())
+  
+  # assign duration and end time to bouts of a single reading
+  bout.info %<>% mutate(duration = ifelse(size > 1, difftime(b.end, b.start, units ="mins"), 5),
+                        b.end = b.start + 60*duration)
   
   return(bout.info)
 }
