@@ -2,3 +2,7 @@
 .Rhistory
 .RData
 .Ruserdata
+bm_feature_extraction_main.html
+output_data/*.Rds
+output_graphics/*.png
+reports/*.html
