@@ -3,7 +3,7 @@ traj.algorithm <-
   rbind.data.frame(
     readRDS("M:/PhD_Folder/awear_bm/output_data/traj_daisy.Rds"),
     readRDS("M:/PhD_Folder/awear_bm/output_data/traj_violet.Rds"),
-    #readRDS("M:/PhD_Folder/awear_bm/output_data/traj_nasturtium.Rds"), # still need Nina's logsheets updated
+    readRDS("M:/PhD_Folder/awear_bm/output_data/traj_nasturtium.Rds"), # still need Nina's logsheets updated
     readRDS("M:/PhD_Folder/awear_bm/output_data/traj_agapantha.Rds"),
     readRDS("M:/PhD_Folder/awear_bm/output_data/traj_anthurium.Rds")
   )
@@ -14,7 +14,7 @@ act.algorithm <-
   rbind.data.frame(
     readRDS("M:/PhD_Folder/awear_bm/output_data/activity_daisy.Rds"),
     readRDS("M:/PhD_Folder/awear_bm/output_data/activity_violet.Rds"),
-    #readRDS("M:/PhD_Folder/awear_bm/output_data/activity_nasturtium.Rds"), # still need Nina's logsheets updated
+    readRDS("M:/PhD_Folder/awear_bm/output_data/activity_nasturtium.Rds"), # still need Nina's logsheets updated
     readRDS("M:/PhD_Folder/awear_bm/output_data/activity_agapantha.Rds"),
     readRDS("M:/PhD_Folder/awear_bm/output_data/activity_anthurium.Rds")
   ) %>% ungroup()
@@ -24,7 +24,7 @@ stepcounters <-
   rbind.data.frame(
     readRDS("M:/PhD_Folder/awear_bm/output_data/stepcounters_daisy.Rds"),
     readRDS("M:/PhD_Folder/awear_bm/output_data/stepcounters_violet.Rds"),
-    #readRDS("M:/PhD_Folder/awear_bm/output_data/stepcounters_nasturtium.Rds"), # still need Nina's logsheets updated
+    readRDS("M:/PhD_Folder/awear_bm/output_data/stepcounters_nasturtium.Rds"), # still need Nina's logsheets updated
     readRDS("M:/PhD_Folder/awear_bm/output_data/stepcounters_agapantha.Rds"),
     readRDS("M:/PhD_Folder/awear_bm/output_data/stepcounters_anthurium.Rds")
   )
@@ -54,7 +54,11 @@ colnames(traj.logsheets)[1] <- "StayGo"
 
 # Imported manually (from environment panel) once-off then saved for all future use
 #saveRDS(metrics_logsheets_pseudonymised,"M:/PhD_Folder/CaseStudies/Data_analysis/output/metrics_logsheets.Rds")
-metrics.logsheets <- readRDS("M:/PhD_Folder/CaseStudies/Data_analysis/output/metrics_logsheets.Rds")
+metrics.logsheets.NOI <- readRDS("M:/PhD_Folder/CaseStudies/Data_analysis/output/metrics_logsheets.Rds")
+
+metrics.logsheets <- 
+  read_excel(paste("M:/PhD_Folder/Pilot2018/metrics_logsheets_pseudonymised.xlsx",sep=""),col_names = TRUE,
+             col_types = c("text","numeric","date","numeric","numeric","text")) 
 
 # Combine metrics results from logsheets and algorithm for comparison:
 metrics.combined <- merge(metrics.algorithm, metrics.logsheets,
