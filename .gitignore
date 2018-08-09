@@ -3,6 +3,7 @@
 .RData
 .Ruserdata
 bm_feature_extraction_main.html
-output_data/*.Rds
-output_graphics/*.png
+output_data
+output_graphics
 reports/*.html
+RPR~1.USE

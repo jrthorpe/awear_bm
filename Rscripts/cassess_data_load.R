@@ -47,7 +47,7 @@ steps.list <- list(P03JJ = readRDS("./output_data/steps_P03JJ.Rds"), # from algo
 # without distinguishing
 
 # survey results:
-activity.results <- act.assessments %>% mutate(vehicle.days = car.days+dot.days,
+activity.results <- act.assessments %>% mutate(vehicle = car.days+dot.days,
                                                source = "survey") %>%
   select(participant,
          active.work.days,
@@ -55,12 +55,14 @@ activity.results <- act.assessments %>% mutate(vehicle.days = car.days+dot.days,
          active.sport.days,
          active.sport.mpd,
          still.mpd,
-         vehicle.days,
+         vehicle,
          bike.days,
          foot.days,
          bike.mpd,
          foot.mpd,
          source)
+colnames(activity.results)[8:9] <- c("bike","foot") # for better plot ticklabels
+remove(act.assessments)
 
 # sensor results:
 # create and append to survey results in same format
@@ -111,9 +113,9 @@ for(p in p.codes){
     active.sport.days = NA,
     active.sport.mpd = NA,
     still.mpd = sensor.still$mpd,
-    vehicle.days = sensor.transport.days$Vehicle,
-    bike.days = sensor.transport.days$Bicycle,
-    foot.days = sensor.transport.days$Foot,
+    vehicle = sensor.transport.days$Vehicle,
+    bike = sensor.transport.days$Bicycle,
+    foot = sensor.transport.days$Foot,
     bike.mpd = NA,
     foot.mpd = sensor.active.mpd %>% filter(moving==1) %>% select(mpd) %>% as.numeric(),
     source = "sensor")

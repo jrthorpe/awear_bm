@@ -29,14 +29,13 @@ library(mapview) # added in v1 of analysis framework
 library(tidyr) # added for function "complete" in assessments section
 library(htmltools)
 library(RColorBrewer)
+library(processx) # for saving static plotly graphics 
+library("readxl") # For reading in pilot data
 
 # For DBSCAN clustering
 library(fpc)
 library(dbscan)
 library(factoextra)
-
-# For reading in pilot data
-library("readxl")
 
 # Load custom functions:
 source("./Rscripts/jrt_utils.R")
@@ -53,7 +52,7 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
-```{r Define variables}
+```{r Define variables, eval=FALSE, include=FALSE}
 
 # Select participant
 #p.codes <- "P03JJ" # single participant
@@ -121,7 +120,9 @@ remove(loc.accuracy, dT, dD, time.threshold.stay, time.threshold.go, dist.thresh
 
 ### Steps
 
-```{r STEPS, eval=FALSE, include=FALSE}
+```{r STEPS}
+
+#, eval=FALSE, include=FALSE
 
 for(p in p.codes){
   P <- participants[[p]]
@@ -145,7 +146,8 @@ stepcounters <- rbind(steps.watch %>% ungroup() %>% select(dates, timestamp, ste
 saveRDS(stepcounters,paste0("M:/PhD_Folder/awear_bm/output_data/stepcounters_",p,".Rds"))
 
 # total counts per day
-saveRDS(steps.totals,paste0("M:/PhD_Folder/awear_bm/output_data/steptotals_",p,".Rds"))
+saveRDS(steps.totals %>% mutate(participant = p),
+  paste0("M:/PhD_Folder/awear_bm/output_data/steptotals_",p,".Rds"))
 
 } 
 
@@ -209,11 +211,12 @@ saveRDS(activity.moves.pday,paste0("M:/PhD_Folder/awear_bm/output_data/activitym
 
 ```{r pilot}
 
+p.codes <- "daisy" # c("daisy","violet","agapantha","anthurium","nasturtium") # pilot #
+
 # Load pilot data
 # note: Logsheest activities will be annotated, no logsheet step data.
 source("./Rscripts/pilot_data_load.R")
 
-p.codes <- c("daisy","violet","agapantha","anthurium","nasturtium") # pilot #
 plotlist_mob_act <- list()
 plotlist_steps <- list()
 plotlist_places <- list()
@@ -223,7 +226,6 @@ counter_p <- 1
 # Create plots per participant per day (trajectories, activities, steps)
 for(p in p.codes){
   
-  p <- "nasturtium"
   traj.logsheets.p <- traj.logsheets %>% filter(participant==p)
   traj.algorithm.p <- traj.algorithm %>% filter(participant==p)
   act.algorithm.p <- act.algorithm %>% filter(participant==p)
@@ -233,7 +235,7 @@ for(p in p.codes){
   overlap <- unique(traj.algorithm.p$dates) %in% unique(traj.logsheets.p$dates)
   period <- unique(traj.algorithm.p$dates)[overlap]
   
-  for(i in 1:length(period)){ #
+  for(i in 1:1){ #length(period)
   #i<-2
   d <- period[i]
   data.d <- pilot_data_bydate(traj.logsheets.p, traj.algorithm.p, act.algorithm.p, d)
@@ -243,6 +245,7 @@ for(p in p.codes){
   min.time <- min(log.data$Time[2],alg.data$Time[2])-5*60
   max.time <- max(log.data$Time[length(log.data)-1],alg.data$Time[length(alg.data)-1])+5*60
   timeaxis$range <- as.numeric(c(min.time,max.time))*1000
+  
   tmp.traj <- plot_ly(data = log.data %>% arrange(event,Time),
         x=~Time, y=~StayGo,
         type = "scatter", mode = "lines", line = list(color = "black"),
@@ -278,7 +281,7 @@ for(p in p.codes){
               opacity = 0.5, line = list(color=colourset[3], width = 20)) %>% #legendgroup = "Activity") 
     layout(yaxis=list(title="Activity", showticklabels = FALSE),
            xaxis=timeaxis,
-           margin = list(l = 50, r = 50, b = 50, t = 50, pad = 4))
+           margin = list(l = 50, r = 50, b = 80, t = 50, pad = 4))
 
   # steps plot
   tmp.steps <- plot_ly(stepcounters.p %>% filter(dates==d) %>% group_by(source),
@@ -291,6 +294,7 @@ for(p in p.codes){
            margin = list(l = 50, r = 50, b = 50, t = 50, pad = 4))
 
   print(subplot(tmp.traj, tmp.act, nrows=2, shareX = TRUE))
+  
   print(subplot(tmp.traj, tmp.steps, nrows=2, shareX = TRUE))
   # join plots in a subplot
   plotlist_mob_act[[counter]] <- subplot(tmp.traj, tmp.act, nrows=2, shareX = TRUE)
@@ -333,12 +337,27 @@ plot_ly(metrics.compare, #can also use separate .log and .alg and add_trace to g
 # compare places visited: 
 subplot(plotlist_places, nrows = 2, margin=c(0.01,0.01,0.05,0.05), shareY = TRUE, shareX = TRUE)
 
-
 # tabulate metrics results:
 metrics.tab <- metrics.combined %>% mutate(diff.tt = Tt.out - Tt.out.logs)
 metrics.tab %<>% mutate(diff.places = N.places - N.places.logs)
 metrics.tab %>% group_by(participant) %>% summarise(t.out = mean(diff.tt), n.places = mean(diff.places))
 metrics.tab %>% group_by(participant) %>% summarise(t.out = mean(diff.tt), n.places = mean(diff.places))
+
+steps.diffs <- melt(steptotals, id.vars=c("dates", "participant", "id"))
+bob <- plot_ly(data = steps.diffs %>% group_by(id),
+        x = ~id,
+        y = ~value,
+        type = "scatter",
+        mode = "lines",
+        color = ~participant) %>%
+  add_trace(data = steps.diffs %>% ungroup(),
+            x = ~id,
+            y = ~value,
+            type = "scatter",
+            mode = "markers",
+            marker = list(color = "black"), 
+            symbol = ~variable,
+            inherit = FALSE) 
 
 ```
 

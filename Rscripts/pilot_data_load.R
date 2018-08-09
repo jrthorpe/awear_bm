@@ -29,6 +29,17 @@ stepcounters <-
     readRDS("M:/PhD_Folder/awear_bm/output_data/stepcounters_anthurium.Rds")
   )
 
+# stepcount daily totals  
+steptotals <-
+  rbind.data.frame(
+    readRDS("M:/PhD_Folder/awear_bm/output_data/steptotals_daisy.Rds"),
+    readRDS("M:/PhD_Folder/awear_bm/output_data/steptotals_violet.Rds"),
+    readRDS("M:/PhD_Folder/awear_bm/output_data/steptotals_nasturtium.Rds"),
+    readRDS("M:/PhD_Folder/awear_bm/output_data/steptotals_agapantha.Rds"),
+    readRDS("M:/PhD_Folder/awear_bm/output_data/steptotals_anthurium.Rds")
+  ) %>% 
+  filter(!is.na(total.watch) & !is.na(total.phone) & total.watch>0 & total.phone>0) %>% 
+  mutate(id = 1:n())
 
 # metrics results: (old file location CaseStudies/Data_analysis/output)
 metrics.algorithm <- rbind.data.frame(readRDS("M:/PhD_Folder/awear_bm/output_data/metrics_daisy.Rds"),
@@ -54,7 +65,7 @@ colnames(traj.logsheets)[1] <- "StayGo"
 
 # Imported manually (from environment panel) once-off then saved for all future use
 #saveRDS(metrics_logsheets_pseudonymised,"M:/PhD_Folder/CaseStudies/Data_analysis/output/metrics_logsheets.Rds")
-metrics.logsheets.NOI <- readRDS("M:/PhD_Folder/CaseStudies/Data_analysis/output/metrics_logsheets.Rds")
+# metrics.logsheets.NOI <- readRDS("M:/PhD_Folder/CaseStudies/Data_analysis/output/metrics_logsheets.Rds")
 
 metrics.logsheets <- 
   read_excel(paste("M:/PhD_Folder/Pilot2018/metrics_logsheets_pseudonymised.xlsx",sep=""),col_names = TRUE,

@@ -355,3 +355,27 @@ get_mcp <- function(locations, Qd) {
   return(list(mcp=mcp, mcp.poly=mcp.poly, centroid=centroid))
 }
 
+mobility_zones <- function(traj.summary){
+  
+  # ** Mobility Zones ----
+  # mobility boundary crossings based on the mobility baseline questionnaire:
+  # counts the number of times the person leaves a certain radius around their home
+  # levels: daily, 4-6 per week, 1-3 per week, less than 1
+  # TODO: fix this so it is not like every small trip at work is another additional trip out of town. -- done, only need in form TRUE/FALSE per day
+  
+  
+  mobility.zones <- traj.summary %>%
+    mutate(zone = cut(
+      action.range,
+      breaks = c(0, 25, 50, 1000, 10000, Inf),
+      labels = c("mz1", "mz2", "mz3", "mz4", "mz5")
+    )) %>%
+    group_by(dates, zone) %>%
+    summarize(entry = n() > 0) %>%
+    ungroup() %>%
+    dcast(dates ~ zone, value.var = "entry") %>%
+    mutate(dweek = (as.numeric(dates - dates[1])) %/% 7)
+  
+  return(mobility.zones)
+}
+

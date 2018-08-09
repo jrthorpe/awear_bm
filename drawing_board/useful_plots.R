@@ -34,16 +34,13 @@ mapview(mappoints, zcol = "traj.event", burst = TRUE, map.types = "OpenStreetMap
 # STEPCOUNTS ----
 
 # For visualising step data:
-steps_vis <- function(steps.log){
-  
-  plot_ly(steps.log,
+plot_ly(steps.log,
           x = ~timestamp,
           y = ~step_count,
           color = ~dsource,
           colors = c("orange","deepskyblue2"),
           type = "scatter",
           mode = "lines+markers")
-}
 
 # Watch and phone steps summed over day
 plot_ly(data = steps.watch,
@@ -56,6 +53,18 @@ plot_ly(data = steps.watch,
             x = ~timestamp,
             y = ~stepcounter,
             name = "phone")
+
+# Bouts based on stepcount
+plot_ly(
+  steps.bouts[[2]],
+  x = ~ dates,
+  y = ~ window,
+  z = ~ steps.win,
+  #zmin = 0,
+  zmax = ~floor(quantile(steps.win, .99)),
+  type = "heatmap",
+  colorscale = "Greys"
+)
 
 # Lines to see if there is a consistent pattern
 plot_ly(
