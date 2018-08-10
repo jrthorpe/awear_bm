@@ -2,9 +2,10 @@
 .Rhistory
 .RData
 .Ruserdata
-bm_feature_extraction_main.html
 output_data
 output_graphics
 *.html
 *.docx
-RPR~1.USE
+*.tex
+*.pdf
+Pilot2018
