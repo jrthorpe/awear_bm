@@ -5,13 +5,6 @@ date: "25 jul 2018"
 output: html_document
 ---
 
-
-output:
-  word_document: default
-  html_document: default
-  pdf_document: default
-always_allow_html: yes
-
 ## Setup: load packages, custom functions and data
 
 ```{r setup, include=FALSE}
@@ -223,7 +216,7 @@ saveRDS(activity.moves.pday,paste0("./output_data/activitymoves_",p,".Rds"))
 
 ```{r pilot, echo=FALSE}
 
-p.codes <- c("daisy","violet") #,"agapantha","anthurium","nasturtium") # pilot #
+p.codes <- c("daisy","violet","agapantha","anthurium","nasturtium") # pilot #
 
 # Load pilot data
 # note: Logsheest activities will be annotated, no logsheet step data.

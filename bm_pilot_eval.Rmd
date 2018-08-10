@@ -1,0 +1,121 @@
+---
+title: "AWEAR Behavioural Monitoring Setup"
+author: "Julia Thorpe"
+date: "25 jul 2018"
+output: html_document
+---
+
+## Setup: load packages, custom functions and data
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# For solving package install problem: https://stackoverflow.com/questions/5700505/windows-7-update-packages-problem-unable-to-move-temporary-installation
+# trace(utils:::unpackPkgZip, edit=TRUE) > line 140 (line 142 in R 3.4.4) > Sys.sleep(0.5) > Sys.sleep(2)
+
+# Load packages and functions.
+library(data.table)
+library(dtplyr)
+library(dplyr)
+library(magrittr)
+library(lubridate)
+library(ggplot2)
+library(reshape2)
+library(maptools)
+library(plotly)
+library(maps)
+library(mapproj)
+library(sp)
+library(caTools)
+library(geosphere) # added in v3 of data checker
+library(mapview) # added in v1 of analysis framework
+library(tidyr) # added for function "complete" in assessments section
+library(htmltools)
+library(RColorBrewer)
+#library(processx) # for saving static plotly graphics - NIU 
+library("readxl") # For reading in pilot data
+
+# Load custom functions:
+source("./Rscripts/jrt_utils.R")
+source("./Rscripts/jrt_mobility.R")
+source("./Rscripts/jrt_steps.R")
+source("./Rscripts/jrt_activity.R")
+source("./Rscripts/users.R")
+source("./Rscripts/stylesheet.R")
+
+# Set the participant selection
+p.codes <- c("daisy","violet") #,"agapantha","anthurium","nasturtium") # pilot #
+```
+
+# Get the evaluation results
+Structure datasets from algorithm results and logsheets for comparison. Generate required plots and results tables/datasets.
+
+```{r load results, echo=FALSE}
+
+# Load pilot data and generate plots
+
+# note: Logsheest activities will be annotated, no logsheet step data.
+source("./Rscripts/pilot_data_load.R")
+source("./Rscripts/pilot_plotter.R")
+
+```
+
+# Time charts
+```{r timecharts, echo=FALSE}
+
+htmltools::tagList(plotlist_mob_act)
+
+```
+
+# Steps
+```{r stepcounters, echo=FALSE}
+
+htmltools::tagList(plotlist_steps)
+
+
+steps.diffs <- melt(steptotals, id.vars=c("dates", "participant", "id"))
+plot_ly(data = steps.diffs %>% group_by(id),
+        x = ~id,
+        y = ~value,
+        type = "scatter",
+        mode = "lines",
+        color = ~participant) %>%
+  add_trace(data = steps.diffs %>% ungroup(),
+            x = ~id,
+            y = ~value,
+            type = "scatter",
+            mode = "markers",
+            marker = list(color = "black"), 
+            symbol = ~variable,
+            inherit = FALSE) 
+
+
+```
+
+
+# Moblity Metrics
+```{r mobmetrics, echo=FALSE}
+
+# Comparison of mobility metrics calculated from logsheets vs algorithm data
+# note: dataset created in data load file
+
+# compare time out of home:
+plot_ly(metrics.compare, #can also use separate .log and .alg and add_trace to generate same plot
+        x=~Day,
+        y=~Tt.out,
+        type = "scatter",
+        mode = "lines+markers",
+        color = ~participant,
+        linetype = ~results) %>%  
+  layout(yaxis = list(title="Time out of home in hours"))
+
+# compare places visited: 
+subplot(plotlist_places, nrows = 2, margin=c(0.01,0.01,0.05,0.05), shareY = TRUE, shareX = TRUE)
+
+# tabulate metrics results:
+metrics.tab <- metrics.combined %>% mutate(diff.tt = Tt.out - Tt.out.logs)
+metrics.tab %<>% mutate(diff.places = N.places - N.places.logs)
+metrics.tab %>% group_by(participant) %>% summarise(t.out = mean(diff.tt), n.places = mean(diff.places))
+metrics.tab %>% group_by(participant) %>% summarise(t.out = mean(diff.tt), n.places = mean(diff.places))
+
+```
