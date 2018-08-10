@@ -1,52 +1,52 @@
 # trajectories
 traj.algorithm <-
   rbind.data.frame(
-    readRDS("M:/PhD_Folder/awear_bm/output_data/traj_daisy.Rds"),
-    readRDS("M:/PhD_Folder/awear_bm/output_data/traj_violet.Rds"),
-    readRDS("M:/PhD_Folder/awear_bm/output_data/traj_nasturtium.Rds"), # still need Nina's logsheets updated
-    readRDS("M:/PhD_Folder/awear_bm/output_data/traj_agapantha.Rds"),
-    readRDS("M:/PhD_Folder/awear_bm/output_data/traj_anthurium.Rds")
+    readRDS("./output_data/traj_daisy.Rds"),
+    readRDS("./output_data/traj_violet.Rds"),
+    readRDS("./output_data/traj_nasturtium.Rds"),
+    readRDS("./output_data/traj_agapantha.Rds"),
+    readRDS("./output_data/traj_anthurium.Rds")
   )
 attributes(traj.algorithm$T.end) <- attributes(traj.algorithm$T.start) #otherwise different from T.start (no clue why), which causes problems when merged
 
 # activities
 act.algorithm <-
   rbind.data.frame(
-    readRDS("M:/PhD_Folder/awear_bm/output_data/activity_daisy.Rds"),
-    readRDS("M:/PhD_Folder/awear_bm/output_data/activity_violet.Rds"),
-    readRDS("M:/PhD_Folder/awear_bm/output_data/activity_nasturtium.Rds"), # still need Nina's logsheets updated
-    readRDS("M:/PhD_Folder/awear_bm/output_data/activity_agapantha.Rds"),
-    readRDS("M:/PhD_Folder/awear_bm/output_data/activity_anthurium.Rds")
+    readRDS("./output_data/activity_daisy.Rds"),
+    readRDS("./output_data/activity_violet.Rds"),
+    readRDS("./output_data/activity_nasturtium.Rds"),
+    readRDS("./output_data/activity_agapantha.Rds"),
+    readRDS("./output_data/activity_anthurium.Rds")
   ) %>% ungroup()
 
 # stepcount over day
 stepcounters <-
   rbind.data.frame(
-    readRDS("M:/PhD_Folder/awear_bm/output_data/stepcounters_daisy.Rds"),
-    readRDS("M:/PhD_Folder/awear_bm/output_data/stepcounters_violet.Rds"),
-    readRDS("M:/PhD_Folder/awear_bm/output_data/stepcounters_nasturtium.Rds"), # still need Nina's logsheets updated
-    readRDS("M:/PhD_Folder/awear_bm/output_data/stepcounters_agapantha.Rds"),
-    readRDS("M:/PhD_Folder/awear_bm/output_data/stepcounters_anthurium.Rds")
+    readRDS("./output_data/stepcounters_daisy.Rds"),
+    readRDS("./output_data/stepcounters_violet.Rds"),
+    readRDS("./output_data/stepcounters_nasturtium.Rds"),
+    readRDS("./output_data/stepcounters_agapantha.Rds"),
+    readRDS("./output_data/stepcounters_anthurium.Rds")
   )
 
 # stepcount daily totals  
 steptotals <-
   rbind.data.frame(
-    readRDS("M:/PhD_Folder/awear_bm/output_data/steptotals_daisy.Rds"),
-    readRDS("M:/PhD_Folder/awear_bm/output_data/steptotals_violet.Rds"),
-    readRDS("M:/PhD_Folder/awear_bm/output_data/steptotals_nasturtium.Rds"),
-    readRDS("M:/PhD_Folder/awear_bm/output_data/steptotals_agapantha.Rds"),
-    readRDS("M:/PhD_Folder/awear_bm/output_data/steptotals_anthurium.Rds")
+    readRDS("./output_data/steptotals_daisy.Rds"),
+    readRDS("./output_data/steptotals_violet.Rds"),
+    readRDS("./output_data/steptotals_nasturtium.Rds"),
+    readRDS("./output_data/steptotals_agapantha.Rds"),
+    readRDS("./output_data/steptotals_anthurium.Rds")
   ) %>% 
   filter(!is.na(total.watch) & !is.na(total.phone) & total.watch>0 & total.phone>0) %>% 
   mutate(id = 1:n())
 
 # metrics results: (old file location CaseStudies/Data_analysis/output)
-metrics.algorithm <- rbind.data.frame(readRDS("M:/PhD_Folder/awear_bm/output_data/metrics_daisy.Rds"),
-                                      readRDS("M:/PhD_Folder/awear_bm/output_data/metrics_violet.Rds"),
-                                      readRDS("M:/PhD_Folder/awear_bm/output_data/metrics_agapantha.Rds"),
-                                      readRDS("M:/PhD_Folder/awear_bm/output_data/metrics_anthurium.Rds"),
-                                      readRDS("M:/PhD_Folder/awear_bm/output_data/nina_metrics.Rds")
+metrics.algorithm <- rbind.data.frame(readRDS("./output_data/metrics_daisy.Rds"),
+                                      readRDS("./output_data/metrics_violet.Rds"),
+                                      readRDS("./output_data/metrics_agapantha.Rds"),
+                                      readRDS("./output_data/metrics_anthurium.Rds"),
+                                      readRDS("./output_data/metrics_nasturtium.Rds")
 )
 metrics.algorithm$day <- NULL # Day set in the logsheets instead
 
@@ -54,7 +54,7 @@ metrics.algorithm$day <- NULL # Day set in the logsheets instead
 
 # Logsheet results:
 traj.logsheets <- 
-  read_excel(paste("M:/PhD_Folder/Pilot2018/AWEAR_Logsheet_Testing/logsheets_combined.xlsx",sep=""),col_names = TRUE,
+  read_excel(paste("./Pilot2018/AWEAR_Logsheet_Testing/logsheets_combined.xlsx",sep=""),col_names = TRUE,
              col_types = c("text","date","date","date","text","text","text")) 
 traj.logsheets %<>%
   mutate(Start = as.POSIXct(paste(traj.logsheets$Date, format(traj.logsheets$Start, "%H:%M:%S")), format="%Y-%m-%d %H:%M:%S"),
@@ -68,7 +68,7 @@ colnames(traj.logsheets)[1] <- "StayGo"
 # metrics.logsheets.NOI <- readRDS("M:/PhD_Folder/CaseStudies/Data_analysis/output/metrics_logsheets.Rds")
 
 metrics.logsheets <- 
-  read_excel(paste("M:/PhD_Folder/Pilot2018/metrics_logsheets_pseudonymised.xlsx",sep=""),col_names = TRUE,
+  read_excel(paste("./Pilot2018/metrics_logsheets_pseudonymised.xlsx",sep=""),col_names = TRUE,
              col_types = c("text","numeric","date","numeric","numeric","text")) 
 
 # Combine metrics results from logsheets and algorithm for comparison:
