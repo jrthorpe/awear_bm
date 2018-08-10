@@ -5,6 +5,7 @@ plotlist_steps <- list()
 plotlist_places <- list()
 counter <- 1
 counter_p <- 1
+colours.act <- list(Foot=colourset[1], Bicycle=colourset[2], Vehicle=colourset[3])
 
 # Create plots per participant per day (trajectories, activities, steps)
 for(p in p.codes){
@@ -20,7 +21,7 @@ for(p in p.codes){
   overlap <- unique(traj.algorithm.p$dates) %in% unique(traj.logsheets.p$dates) 
   period <- unique(traj.algorithm.p$dates)[overlap]
   
-  for(i in 1:1){ #length(period)
+  for(i in 1:length(period)){ #
     
     # unpack data for specified date/participant into environment
     d <- period[i]
@@ -35,7 +36,8 @@ for(p in p.codes){
     timeaxis$range <- as.numeric(c(min.time,max.time))*1000 # time axis defined in stylesheet script
     
     # create plot by layering logsheets trajectory, algorithm trajectory and text for moves as annotations
-    tmp.traj <- plot_ly(data = log.data %>% arrange(event,Time),
+    if(nrow(alg.data) > 0){
+      tmp.traj <- plot_ly(data = log.data %>% arrange(event,Time),
                         x=~Time, y=~StayGo,
                         type = "scatter", mode = "lines", line = list(color = "black"),
                         legendgroup = "Trajectories", name = "Logsheet results") %>%
@@ -50,27 +52,102 @@ for(p in p.codes){
              xaxis=timeaxis,
              margin = list(l = 50, r = 50, b = 50, t = 50, pad = 4),
              title=paste(p,d))
+    }
+    
     
     # activities: plots "still" as a grey line then layers each other type of bout in a different colour
-    tmp.act <- plot_ly(data = act.data %>% filter(activity == "Still"),
-                       x = ~value, y = ~dates, name = "Still",
-                       type = "scatter", mode = "lines", line = list(color = "grey", width = 2)) %>% #legendgroup = "Activity")
-      add_trace(data = act.data %>% filter(activity == "Foot"),
-                x = ~value, y = ~dates, name = "On Foot",
-                type ="scatter", mode="lines",
-                opacity=0.5, line=list(color=colourset[1], width=20)) %>% 
-      #legendgroup = "Activity")
-      add_trace(data = act.data %>% filter(activity=="Bicycle"),
-                x = ~value, y = ~dates, name = "Bicycle",
-                type = "scatter", mode = "lines",
-                opacity = 0.5, line = list(color=colourset[2], width = 20)) %>% #legendgroup = "Activity") 
-      add_trace(data = act.data %>% filter(activity == "Vehicle"),
-                x = ~value, y = ~dates, name = "Vehicle",
-                type = "scatter", mode = "lines",
-                opacity = 0.5, line = list(color=colourset[3], width = 20)) %>% #legendgroup = "Activity") 
-      layout(yaxis=list(title="Activity", showticklabels = FALSE),
-             xaxis=timeaxis,
-             margin = list(l = 50, r = 50, b = 80, t = 50, pad = 4))
+    
+    if (nrow(act.data) > 0) {
+      # make the plot
+      tmp.act <-
+        plot_ly(
+          data = act.data %>% filter(activity == "Still"),
+          x = ~ value,
+          y = ~ dates,
+          name = "Still",
+          type = "scatter",
+          mode = "lines",
+          line = list(color = "grey", width = 2)
+        ) %>%
+        layout(
+          yaxis = list(title = "Activity", showticklabels = FALSE),
+          xaxis = timeaxis,
+          margin = list(
+            l = 50,
+            r = 50,
+            b = 80,
+            t = 50,
+            pad = 4
+          )
+        )
+      
+      # layer it up
+      act.data %<>% filter(activity != "Still")
+      print(unique(act.data$activity))
+      for (act in unique(act.data$activity)) {
+        #subset data
+        dataFilt <- act.data %>% filter(activity == act)
+        
+        #add it
+        tmp.act <- add_trace(
+          tmp.act,
+          data = dataFilt,
+          x =  ~ value,
+          y =  ~ dates,
+          name = act,
+          type = "scatter",
+          mode = "lines",
+          opacity = 0.5,
+          line = list(color = colours.act[[act]], width = 20)
+        )
+      }
+      
+    }
+    
+
+    #print(tmp.act)
+    
+    # if(nrow(act.data)>0){
+    # n.act <- length(unique(act.data$activity))-1
+    # print(n.act)
+    # tmp.act <- plot_ly(data = act.data %>% filter(activity == "Still"),
+    #                    x = ~value, y = ~dates, 
+    #                    name = "Still",
+    #                    type = "scatter", mode = "lines", line = list(color = "grey", width = 2)) %>% 
+    #   add_trace(data = act.data %>% filter(activity != "Still"),
+    #             x = ~value, y = ~dates, 
+    #             color = ~activity,
+    #             colors = c("#E41A1C","#377EB8","#4DAF4A")[1:n.act],
+    #             type = "scatter", mode = "lines",
+    #             opacity=0.6, line=list(width=20),
+    #             inherit = FALSE) %>% 
+    #   layout(yaxis=list(title="Activity", showticklabels = FALSE),
+    #          xaxis=timeaxis,
+    #          margin = list(l = 50, r = 50, b = 80, t = 50, pad = 4))
+    # }
+    
+    # tmp.act <- plot_ly(data = act.data %>% filter(activity == "Still"),
+    #                    x = ~value, y = ~dates,
+    #                    #name = "Still",
+    #                    type = "scatter", mode = "lines", line = list(color = "grey", width = 2)) %>% 
+    #   add_trace(data = act.data %>% filter(activity == "Foot"),
+    #             x = ~value, y = ~dates,
+    #             #name = "On Foot",
+    #             type ="scatter", mode="lines",
+    #             opacity=0.5, line=list(color=colourset[1], width=20)) %>%
+    #   add_trace(data = act.data %>% filter(activity=="Bicycle"),
+    #             x = ~value, y = ~dates,
+    #             #name = "Bicycle",
+    #             type = "scatter", mode = "lines",
+    #             opacity = 0.5, line = list(color=colourset[2], width = 20)) %>%
+    #   add_trace(data = act.data %>% filter(activity == "Vehicle"),
+    #             x = ~value, y = ~dates,
+    #             #name = "Vehicle",
+    #             type = "scatter", mode = "lines",
+    #             opacity = 0.5, line = list(color=colourset[3], width = 20)) %>%
+    #   layout(yaxis=list(title="Activity", showticklabels = FALSE),
+    #          xaxis=timeaxis,
+    #          margin = list(l = 50, r = 50, b = 80, t = 50, pad = 4))
     
     # steps plot
     tmp.steps <- plot_ly(stepcounters.p %>% filter(dates==d) %>% group_by(source),
@@ -107,3 +184,20 @@ for(p in p.codes){
   plotlist_places[[counter_p]] <- sp; counter_p <- counter_p+1
   
 }
+
+# plot_ly(data = act.data %>% filter(activity == "Still"),
+#         x = ~value, y = ~dates, 
+#         name = "Still",
+#         type = "scatter", mode = "lines", line = list(color = "grey", width = 2)) %>% 
+#   add_trace(data = act.data %>% filter(activity != "Still"),
+#         x = ~value, y = ~dates, 
+#         color = ~activity,
+#         colors = colourset[1:3],
+#         type = "scatter", mode = "lines",
+#         opacity=0.4, line=list(width=20),
+#         inherit = FALSE) %>% 
+#   layout(yaxis=list(title="Activity", showticklabels = FALSE),
+#          xaxis=timeaxis,
+#          margin = list(l = 50, r = 50, b = 80, t = 50, pad = 4))
+
+
