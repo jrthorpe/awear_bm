@@ -1,11 +1,9 @@
 ---
-title: "AWEAR Behavioural Monitoring Setup"
+title: "Pilot Evaluation Study"
 author: "Julia Thorpe"
-date: "25 jul 2018"
+date: "August 2018"
 output: html_document
 ---
-
-## Setup: load packages, custom functions and data
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -44,10 +42,10 @@ source("./Rscripts/users.R")
 source("./Rscripts/stylesheet.R")
 
 # Set the participant selection
-p.codes <- c("daisy","violet") #,"agapantha","anthurium","nasturtium") # pilot #
+p.codes <- c("daisy","violet","agapantha","anthurium","nasturtium") # pilot #
 ```
 
-# Get the evaluation results
+### Get the evaluation results
 Structure datasets from algorithm results and logsheets for comparison. Generate required plots and results tables/datasets.
 
 ```{r load results, echo=FALSE}
@@ -60,14 +58,14 @@ source("./Rscripts/pilot_plotter.R")
 
 ```
 
-# Time charts
+### Time charts
 ```{r timecharts, echo=FALSE}
 
 htmltools::tagList(plotlist_mob_act)
 
 ```
 
-# Steps
+### Steps
 ```{r stepcounters, echo=FALSE}
 
 htmltools::tagList(plotlist_steps)
@@ -85,9 +83,12 @@ plot_ly(data = steps.diffs %>% group_by(id),
             y = ~value,
             type = "scatter",
             mode = "markers",
-            marker = list(color = "black"), 
+            marker = list(color = "black", size = 8), 
             symbol = ~variable,
-            inherit = FALSE) 
+            inherit = FALSE) %>%
+  layout(title = "Differences between daily stepcount from watch and phone",
+         yaxis=list(title="Total steps per day"),
+         xaxis=list(title = "Participant-day combination", showticklabels = FALSE))
 
 
 ```
