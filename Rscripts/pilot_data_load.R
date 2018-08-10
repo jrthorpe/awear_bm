@@ -82,10 +82,6 @@ metrics.compare.log <- metrics.combined %>% select(dates,Day,participant) %>%
 metrics.compare <- rbind(metrics.compare.alg,metrics.compare.log)
 
 
-
-
-
-
 # Getting data for a specific date from a single participipants data:
 
 pilot_data_bydate <- function(traj.logsheets.p, traj.algorithm.p, act.algorithm.p, d){

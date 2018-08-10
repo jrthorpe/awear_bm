@@ -10,26 +10,31 @@ counter_p <- 1
 for(p in p.codes){
   
   # get algorithm and logsheet dataset for current participant
-  traj.logsheets.p <- traj.logsheets %>% filter(participant==p) # stay/move trajectories, logsheets
-  traj.algorithm.p <- traj.algorithm %>% filter(participant==p) # stay/move trajectories, algorithm results
-  act.algorithm.p <- act.algorithm %>% filter(participant==p)   # activity bouts, algorithm results
-  stepcounters.p <- stepcounters %>% filter(participant==p)     # cumulative steps from phone and watch
-  places.compare <- metrics.compare %>% filter(participant==p)  # metrics results combined from logsheets and algorithm
+  traj.logsheets.p <- traj.logsheets %>% filter(participant==p)    # stay/move trajectories, logsheets
+  traj.algorithm.p <- traj.algorithm %>% filter(participant==p)    # stay/move trajectories, algorithm results
+  act.algorithm.p <- act.algorithm %>% filter(participant==p)      # activity bouts, algorithm results
+  stepcounters.p <- stepcounters %>% filter(participant==p)        # cumulative steps from phone and watch
+  metrics.compare.p <- metrics.compare %>% filter(participant==p)  # metrics results combined from logsheets and algorithm
   
-  overlap <- unique(traj.algorithm.p$dates) %in% unique(traj.logsheets.p$dates)
+  # get set of dates covered by both algorithm/logsheets results
+  overlap <- unique(traj.algorithm.p$dates) %in% unique(traj.logsheets.p$dates) 
   period <- unique(traj.algorithm.p$dates)[overlap]
   
   for(i in 1:1){ #length(period)
-    #i<-3
+    
+    # unpack data for specified date/participant into environment
     d <- period[i]
-    data.d <- pilot_data_bydate(traj.logsheets.p, traj.algorithm.p, act.algorithm.p, d)
+    data.d <- pilot_data_bydate(traj.logsheets.p, traj.algorithm.p, act.algorithm.p, d) 
     list2env(data.d, .GlobalEnv); remove(data.d)
     
-    # trajectories plot
-    min.time <- min(log.data$Time[2],alg.data$Time[2])-5*60
-    max.time <- max(log.data$Time[length(log.data)-1],alg.data$Time[length(alg.data)-1])+5*60
-    timeaxis$range <- as.numeric(c(min.time,max.time))*1000
+    # trajectories plot:
     
+    # create time axis range covering 15 minutes before first / after last move of the day
+    min.time <- min(log.data$Time[2],alg.data$Time[2])-15*60 # earliest between logsheets/algorithm
+    max.time <- max(log.data$Time[length(log.data)-1],alg.data$Time[length(alg.data)-1])+15*60 # latest between logsheets/algorithm
+    timeaxis$range <- as.numeric(c(min.time,max.time))*1000 # time axis defined in stylesheet script
+    
+    # create plot by layering logsheets trajectory, algorithm trajectory and text for moves as annotations
     tmp.traj <- plot_ly(data = log.data %>% arrange(event,Time),
                         x=~Time, y=~StayGo,
                         type = "scatter", mode = "lines", line = list(color = "black"),
@@ -46,7 +51,7 @@ for(p in p.codes){
              margin = list(l = 50, r = 50, b = 50, t = 50, pad = 4),
              title=paste(p,d))
     
-    # activities plot
+    # activities: plots "still" as a grey line then layers each other type of bout in a different colour
     tmp.act <- plot_ly(data = act.data %>% filter(activity == "Still"),
                        x = ~value, y = ~dates, name = "Still",
                        type = "scatter", mode = "lines", line = list(color = "grey", width = 2)) %>% #legendgroup = "Activity")
@@ -77,18 +82,19 @@ for(p in p.codes){
              xaxis=timeaxis,
              margin = list(l = 50, r = 50, b = 50, t = 50, pad = 4))
     
-    #join plots in a subplot
-    #print(subplot(tmp.traj, tmp.act, nrows=2, shareX = TRUE))
-    #print(subplot(tmp.traj, tmp.steps, nrows=2, shareX = TRUE))
+    # # to show individual plots
+    # print(subplot(tmp.traj, tmp.act, nrows=2, shareX = TRUE))
+    # print(subplot(tmp.traj, tmp.steps, nrows=2, shareX = TRUE))
     
-    plotlist_mob_act[[counter]] <- subplot(tmp.traj, tmp.act, nrows=2, shareX = TRUE)
+    # add individual plots to respectives lists list
+    plotlist_mob_act[[counter]] <- subplot(tmp.traj, tmp.act, nrows=2, shareX = TRUE) 
     plotlist_steps[[counter]] <- subplot(tmp.traj, tmp.steps, nrows=2, shareX = TRUE)
     counter <- counter + 1
   }
   
-  # get comparison of places per day
-  anno_subtitle$text <- p
-  sp <- plot_ly(places.compare,
+  # get comparison of places per day for current participant
+  anno_subtitle$text <- p  # anno_subtitle defined in stylesheet script
+  sp <- plot_ly(metrics.compare.p,
                 x=~Day,
                 y=~N.places,
                 type = "bar",
