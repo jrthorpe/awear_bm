@@ -90,8 +90,9 @@ plot_ly(data = steps.diffs %>% group_by(id),
             symbol = ~variable,
             inherit = FALSE) %>%
   layout(title = "Differences between daily stepcount from watch and phone",
-         yaxis=list(title="Total steps per day"),
-         xaxis=list(title = "Participant-day combination", showticklabels = FALSE))
+         yaxis=list(title="Total steps per day", titlefont = f2, tickfont = f3),
+         xaxis=list(title = "Participant-day combination", titlefont = f2, showticklabels = FALSE),
+         legend = l)
 
 
 ```
@@ -111,10 +112,11 @@ plot_ly(metrics.compare, #can also use separate .log and .alg and add_trace to g
         mode = "lines+markers",
         color = ~participant,
         linetype = ~results) %>%  
-  layout(yaxis = list(title="Time out of home in hours"))
+  layout(yaxis = list(title="Time out of home in hours", titlefont = f2, tickfont = f3),
+         legend = l)
 
 # compare places visited: 
-subplot(plotlist_places, nrows = 2, margin=c(0.01,0.01,0.05,0.05), shareY = TRUE, shareX = TRUE)
+subplot(plotlist_places, margin=c(0.01,0.01,0.05,0.05), shareY = TRUE, titleX = TRUE)
 
 # tabulate metrics results:
 metrics.tab <- metrics.combined %>% mutate(diff.tt = Tt.out - Tt.out.logs)

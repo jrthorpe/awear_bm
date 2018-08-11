@@ -1,7 +1,35 @@
 # STYLE SHEET
 
+# To set size manually:
+# p %>% layout(autosize = F, height = 500, margin = list(l=50, r=50, b=100, t=100, pad=4))
+
+# colours
 colourset <- brewer.pal(9, "Set1")
 colours.compare <- brewer.pal(3, "Set2")
+
+# fonts
+f1 <- list(
+  #family = "Arial, sans-serif",
+  size = 18
+  #color = "lightgrey"
+)
+f2 <- list(
+  #family = "Arial, sans-serif",
+  size = 16
+  #color = "black"
+)
+f3 <- list(
+  #family = "Arial, sans-serif",
+  size = 14
+  #color = "black"
+)
+l <- list(
+  font = f3
+  #bgcolor = "#E2E2E2",
+  #bordercolor = "#FFFFFF",
+  #borderwidth = 2
+  )
+
 
 # annotations for subplot titles
 anno_subtitle <- list(
@@ -11,12 +39,15 @@ anno_subtitle <- list(
   yanchor = "bottom",
   xanchor = "center",
   align = "center",
+  font = f3,
   x = 0.5,
   y = 1,
   showarrow = FALSE)
 
 timeaxis <- list(
   title = " ",
+  titlefont = f2,
+  tickfont = f3,
   autotick = FALSE,
   ticks = "outside",
   #tick0 = 0,
@@ -25,6 +56,11 @@ timeaxis <- list(
   tickwidth = 2#,
   #range = c(2,5)#,
   #tickcolor = toRGB("blue")
+)
+
+stdaxis <- list(
+  titlefont = f1,
+  tickfont = f2
 )
 
 # # example for experimentation

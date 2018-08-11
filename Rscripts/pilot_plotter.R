@@ -40,29 +40,29 @@ for(p in p.codes){
     timeaxis$range <- as.numeric(c(min.time,max.time))*1000 # time axis defined in stylesheet script
     
     # create plot by layering logsheets trajectory, algorithm trajectory and text for moves as annotations
-    if(nrow(alg.data) > 0){
+    if(nrow(alg.data) > 0 & nrow(log.data) > 0 & nrow(act.data) > 0){
       tmp.traj <- plot_ly(data = log.data %>% arrange(event,Time),
                         x=~Time, y=~StayGo,
                         type = "scatter", mode = "lines", line = list(color = "black"),
-                        legendgroup = "Trajectories", name = "Logsheet results") %>%
+                        name = "Logsheet results") %>% #legendgroup = "Trajectories", 
       add_trace(data = alg.data %>% arrange(event,Time),
                 x=~Time, y=~StayGo,
                 line = list(dash = "dot",color = colourset[7]),
-                legendgroup = "Trajectories", name = "Algorithm results")  %>%
-      add_text(data = log.data, x=~Time, y=~StayGo, 
+                name = "Algorithm results")  %>% #legendgroup = "Trajectories", 
+      add_text(data = log.data, x=~Time, y="Mode", 
                text = ~Mode, name = "Logged transport mode", inherit=FALSE,
-               textposition = "bottom right", textfont = list(color = "black", size = 12)) %>%
-      layout(yaxis=list(title=" ", range = c(-1,3)),
+               textposition = "top right", textfont = f2) %>%
+      layout(yaxis=list(title=" ", tickfont = f3, range = c(-1,3), 
+                        categoryarray = c("Mode","Go","Stay"), categoryorder="array"),
              xaxis=timeaxis,
              margin = list(l = 50, r = 50, b = 50, t = 50, pad = 4),
-             title=paste(p,d))
-    }
-    
+             title=paste(p,d), titlefont = f1,
+             legend = l)
     
     # activities: plots "still" as a grey line then layers each other type of bout in a different colour
     
-    if (nrow(act.data) > 0) {
       # make the plot
+      stdaxis$title <- "Activity"; stdaxis$showticklabels <- FALSE # customise standard axis
       tmp.act <- plot_ly(
           data = act.data %>% filter(activity == "Still"),
           x = ~ value,
@@ -71,9 +71,10 @@ for(p in p.codes){
           type = "scatter",
           mode = "lines",
           line = list(color = "grey", width = 2)) %>%
-        layout(yaxis = list(title = "Activity", showticklabels = FALSE),
+        layout(yaxis = list(title = "Activity", showticklabels = FALSE, titlefont = f2, tickfont = f3),
                xaxis = timeaxis,
-               margin = list(l = 50, r = 50, b = 80, t = 50, pad = 4))
+               margin = list(l = 50, r = 50, b = 80, t = 50, pad = 4),
+               legend = l)
       
       # layer it up
       act.data %<>% filter(activity != "Still")
@@ -94,27 +95,42 @@ for(p in p.codes){
           line = list(color = colours.act[[act]], width = 20))
       }
       
+      # add individual plots to respectives lists list
+      plotlist_mob_act[[counter]] <- subplot(tmp.traj, tmp.act, nrows=2, shareX = TRUE)   
+      
+    } else{
+      # add individual plots to respectives lists list
+      plotlist_mob_act[[counter]] <- NULL 
     }
     
     # steps plot
-    tmp.steps <- plot_ly(stepcounters.p %>% filter(dates==d) %>% group_by(source),
+    steps.dat <- stepcounters.p %>% filter(dates==d)
+    if("watch" %in% steps.dat$source & "phone" %in% steps.dat$source){
+      unique(stepcounters.p$source)
+      tmp.steps <- plot_ly(steps.dat %>% group_by(source),
                          x = ~timestamp, y = ~stepcounter,
                          type = "scatter", mode = "lines+markers",
-                         color = ~source, colors = colourset[4:5],
-                         legendgroup = "Steps", name = "source")  %>%
-      layout(yaxis=list(title="Step count"), 
-             xaxis=timeaxis,
-             margin = list(l = 50, r = 50, b = 50, t = 50, pad = 4))
+                         color = ~source, colors = colourset[4:5])  %>% #legendgroup = "Steps", 
+      layout(yaxis = list(title="Step count", titlefont=f2, tickfont=f3), 
+             xaxis = timeaxis,
+             margin = list(l = 50, r = 50, b = 50, t = 50, pad = 4),
+             legend = l)
+    
+     plotlist_steps[[counter]] <- subplot(tmp.traj, tmp.steps, nrows=2, shareX = TRUE)
+    } else{
+      plotlist_steps[[counter]] <- NULL
+    }
     
     # # to show individual plots
     # print(subplot(tmp.traj, tmp.act, nrows=2, shareX = TRUE))
     # print(subplot(tmp.traj, tmp.steps, nrows=2, shareX = TRUE))
     
     # add individual plots to respectives lists list
-    plotlist_mob_act[[counter]] <- subplot(tmp.traj, tmp.act, nrows=2, shareX = TRUE) 
-    plotlist_steps[[counter]] <- subplot(tmp.traj, tmp.steps, nrows=2, shareX = TRUE)
+    #plotlist_mob_act[[counter]] <- subplot(tmp.traj, tmp.act, nrows=2, shareX = TRUE) 
+    #plotlist_steps[[counter]] <- subplot(tmp.traj, tmp.steps, nrows=2, shareX = TRUE)
     # l_mob_act[[counter]] <- as_widget(subplot(tmp.traj, tmp.act, nrows=2, shareX = TRUE)) #trying to get plots to show in word
-    counter <- counter + 1
+    counter <- counter + 1 
+    
   }
   
   # get comparison of places per day for current participant
@@ -125,13 +141,21 @@ for(p in p.codes){
                 type = "bar",
                 color = ~results,
                 colors = colours.compare[1:2],
-                showlegend = ifelse(counter_p==1,TRUE,FALSE))%>%
+                showlegend = ifelse(counter_p==1,TRUE,FALSE),
+                height = 300,
+                width = 350)%>%
     layout(annotations = anno_subtitle,
            yaxis = list(title="N unique places"),
-           xaxis = list(title="Day"))
+           xaxis = list(title="Day"),
+           legend = l)
   plotlist_places[[counter_p]] <- sp; counter_p <- counter_p+1
   
 }
+remove(tmp.act, tmp.steps, tmp.traj,
+       traj.algorithm, traj.algorithm.p,
+       traj.logsheets, traj.logsheets.p,
+       stepcounters, stepcounters.p, steps.dat,
+       act, counter, counter_p, d, p, period, i)
 
 
 

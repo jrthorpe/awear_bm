@@ -80,7 +80,7 @@ metrics.compare.alg <- metrics.combined %>% select(dates,Day,participant,N.place
 metrics.compare.log <- metrics.combined %>% select(dates,Day,participant) %>%
   mutate(N.places=metrics.combined$N.places.logs, Tt.out = metrics.combined$Tt.out.logs, results="logsheets")
 metrics.compare <- rbind(metrics.compare.alg,metrics.compare.log)
-
+remove(metrics.algorithm, metrics.compare.alg, metrics.compare.log)
 
 # Getting data for a specific date from a single participipants data:
 
