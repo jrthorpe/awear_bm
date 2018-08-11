@@ -3,9 +3,9 @@ title: "Pilot Evaluation Study"
 author: "Julia Thorpe"
 date: "August 2018"
 output:
-  word_document: default
   html_document: default
   pdf_document: default
+  word_document: default
 always_allow_html: yes
 ---
 
@@ -46,13 +46,13 @@ source("./Rscripts/users.R")
 source("./Rscripts/stylesheet.R")
 
 # Set the participant selection
-p.codes <- c("daisy","violet","agapantha","anthurium","nasturtium") # pilot #
+p.codes <- c("daisy","violet","agapantha","anthurium","nasturtium") # pilot
 ```
 
 ### Get the evaluation results
 Structure datasets from algorithm results and logsheets for comparison. Generate required plots and results tables/datasets.
 
-```{r load results, echo=FALSE}
+```{r load results}
 
 # Load pilot data and generate plots
 
@@ -63,7 +63,7 @@ source("./Rscripts/pilot_plotter.R")
 ```
 
 ### Time charts
-```{r timecharts, echo=FALSE}
+```{r timecharts, echo=TRUE}
 
 htmltools::tagList(plotlist_mob_act)
 
@@ -73,7 +73,6 @@ htmltools::tagList(plotlist_mob_act)
 ```{r stepcounters, echo=FALSE}
 
 htmltools::tagList(plotlist_steps)
-
 
 steps.diffs <- melt(steptotals, id.vars=c("dates", "participant", "id"))
 plot_ly(data = steps.diffs %>% group_by(id),
