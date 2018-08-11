@@ -35,8 +35,8 @@ for(p in p.codes){
     # trajectories plot:
     
     # create time axis range covering 15 minutes before first / after last move of the day
-    min.time <- min(log.data$Time[2],alg.data$Time[2])-15*60 # earliest between logsheets/algorithm
-    max.time <- max(log.data$Time[length(log.data)-1],alg.data$Time[length(alg.data)-1])+15*60 # latest between logsheets/algorithm
+    min.time <- min(log.data$Time[2],alg.data$Time[2])-60*60 # earliest between logsheets/algorithm
+    max.time <- max(log.data$Time[length(log.data)-1],alg.data$Time[length(alg.data)-1])+60*60 # latest between logsheets/algorithm
     timeaxis$range <- as.numeric(c(min.time,max.time))*1000 # time axis defined in stylesheet script
     
     # create plot by layering logsheets trajectory, algorithm trajectory and text for moves as annotations
