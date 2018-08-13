@@ -119,10 +119,12 @@ for(p in p.codes){
                          color = ~source, colors = colourset[4:5])  %>% #legendgroup = "Steps", 
       layout(yaxis = list(title="Step count", titlefont=f2, tickfont=f3), 
              xaxis = timeaxis,
+             title=paste0(p," day",i), titlefont = f1, #use participation day instead date
              margin = list(l = 50, r = 50, b = 50, t = 50, pad = 4),
              legend = l)
     
-     plotlist_steps[[counter]] <- subplot(tmp.traj, tmp.steps, nrows=2, shareX = TRUE)
+     #plotlist_steps[[counter]] <- subplot(tmp.traj, tmp.steps, nrows=2, shareX = TRUE)
+     plotlist_steps[[counter]] <- tmp.steps # to have only steps without trajectories
     } else{
       plotlist_steps[[counter]] <- NULL
     }
