@@ -186,27 +186,28 @@ cat("Complete: activity data reduced by ", 100-(100*after/before), "% by keeping
 
 # calculate bouts
 activity.bouts <- activity_bouts(activity.log, acts); remove(activity.log)
+activity.bouts %<>% filter(size>1)
 
 # summarise by day
 activity.bouts.pday <- activity.bouts %>% group_by(dates, activity) %>% 
   summarise(total.time =  sum(duration), N = n()) %>%
   mutate(mean.duration = total.time/N)
 
-# For comparison with assessments
-
-# get traj results saved in mobility chunk:
-traj.summary <-  readRDS(paste0("./output_data/traj_",p,".Rds")) 
-# indicate whether activity bouts overlap with a move
-activity.moves <- bout_moves(activity.bouts, traj.summary)
-
-# daily summary for activity bouts with stay/move information 
-activity.moves.pday <- activity.moves %>% 
-  group_by(dates, activity, moving) %>% 
-  summarise(total.time = sum(duration))
+# # For comparison with assessments [NIU]
+# 
+# # get traj results saved in mobility chunk:
+# traj.summary <-  readRDS(paste0("./output_data/traj_",p,".Rds")) 
+# # indicate whether activity bouts overlap with a move
+# activity.moves <- bout_moves(activity.bouts, traj.summary)
+# 
+# # daily summary for activity bouts with stay/move information 
+# activity.moves.pday <- activity.moves %>% 
+#   group_by(dates, activity, moving) %>% 
+#   summarise(total.time = sum(duration))
 
 # save results
 saveRDS(activity.bouts %>% mutate(participant=p),paste0("./output_data/activity_",p,".Rds"))
-saveRDS(activity.moves.pday,paste0("./output_data/activitymoves_",p,".Rds"))
+#saveRDS(activity.moves.pday,paste0("./output_data/activitymoves_",p,".Rds"))
 
 }
 
