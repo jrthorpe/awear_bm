@@ -80,7 +80,9 @@ plot_ly(data = steps.diffs %>% group_by(id),
         y = ~value,
         type = "scatter",
         mode = "lines",
-        color = ~participant) %>%
+        color = ~participant,
+        height = 400,
+        width = 800) %>%
   add_trace(data = steps.diffs %>% ungroup(),
             x = ~id,
             y = ~value,
@@ -108,6 +110,8 @@ plot_ly(data = steps.diffs %>% group_by(id),
 plot_ly(metrics.compare, #can also use separate .log and .alg and add_trace to generate same plot
         x=~Day,
         y=~Tt.out,
+        height = 500,
+        width = 800,
         type = "scatter",
         mode = "lines+markers",
         color = ~participant,
@@ -121,7 +125,6 @@ subplot(plotlist_places, margin=c(0.01,0.01,0.05,0.05), shareY = TRUE, titleX = 
 # tabulate metrics results:
 metrics.tab <- metrics.combined %>% mutate(diff.tt = Tt.out - Tt.out.logs)
 metrics.tab %<>% mutate(diff.places = N.places - N.places.logs)
-metrics.tab %>% group_by(participant) %>% summarise(t.out = mean(diff.tt), n.places = mean(diff.places))
-metrics.tab %>% group_by(participant) %>% summarise(t.out = mean(diff.tt), n.places = mean(diff.places))
+metrics.tab %>% group_by(participant) %>% summarise(t.out = mean(diff.tt, na.rm=TRUE)*60, n.places = mean(diff.places, na.rm=TRUE))
 
 ```

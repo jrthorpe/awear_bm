@@ -34,9 +34,9 @@ for(p in p.codes){
     
     # trajectories plot:
     
-    # create time axis range covering 15 minutes before first / after last move of the day
-    min.time <- min(log.data$Time[2],alg.data$Time[2])-60*60 # earliest between logsheets/algorithm
-    max.time <- max(log.data$Time[length(log.data)-1],alg.data$Time[length(alg.data)-1])+60*60 # latest between logsheets/algorithm
+    # create time axis range covering 30 minutes before first / after last move of the day
+    min.time <- min(log.data$Time[2],alg.data$Time[2])-15*60 # earliest between logsheets/algorithm
+    max.time <- max(log.data$Time[nrow(log.data)-1],alg.data$Time[nrow(alg.data)-1])+15*60 # latest between logsheets/algorithm
     timeaxis$range <- as.numeric(c(min.time,max.time))*1000 # time axis defined in stylesheet script
     
     # create plot by layering logsheets trajectory, algorithm trajectory and text for moves as annotations
@@ -44,6 +44,8 @@ for(p in p.codes){
       tmp.traj <- plot_ly(data = log.data %>% arrange(event,Time),
                         x=~Time, y=~StayGo,
                         type = "scatter", mode = "lines", line = list(color = "black"),
+                        height = 350,
+                        width = 1200,
                         name = "Logsheet results") %>% #legendgroup = "Trajectories", 
       add_trace(data = alg.data %>% arrange(event,Time),
                 x=~Time, y=~StayGo,
@@ -51,12 +53,12 @@ for(p in p.codes){
                 name = "Algorithm results")  %>% #legendgroup = "Trajectories", 
       add_text(data = log.data, x=~Time, y="Mode", 
                text = ~Mode, name = "Logged transport mode", inherit=FALSE,
-               textposition = "top right", textfont = f2) %>%
+               textposition = "top right", textfont = f3) %>%
       layout(yaxis=list(title=" ", tickfont = f3, range = c(-1,3), 
                         categoryarray = c("Mode","Go","Stay"), categoryorder="array"),
              xaxis=timeaxis,
              margin = list(l = 50, r = 50, b = 50, t = 50, pad = 4),
-             title=paste(p,d), titlefont = f1,
+             title=paste0(p," day",i), titlefont = f1, #use participation day instead date
              legend = l)
     
     # activities: plots "still" as a grey line then layers each other type of bout in a different colour
@@ -67,6 +69,8 @@ for(p in p.codes){
           data = act.data %>% filter(activity == "Still"),
           x = ~ value,
           y = ~ dates,
+          height = 350,
+          width = 1200,
           name = "Still",
           type = "scatter",
           mode = "lines",
@@ -109,6 +113,8 @@ for(p in p.codes){
       unique(stepcounters.p$source)
       tmp.steps <- plot_ly(steps.dat %>% group_by(source),
                          x = ~timestamp, y = ~stepcounter,
+                         height = 400,
+                         width = 1200,
                          type = "scatter", mode = "lines+markers",
                          color = ~source, colors = colourset[4:5])  %>% #legendgroup = "Steps", 
       layout(yaxis = list(title="Step count", titlefont=f2, tickfont=f3), 
@@ -143,10 +149,10 @@ for(p in p.codes){
                 colors = colours.compare[1:2],
                 showlegend = ifelse(counter_p==1,TRUE,FALSE),
                 height = 300,
-                width = 350)%>%
+                width = 900)%>%
     layout(annotations = anno_subtitle,
            yaxis = list(title="N unique places"),
-           xaxis = list(title="Day"),
+           xaxis = list(title="Day", dtick = 1),
            legend = l)
   plotlist_places[[counter_p]] <- sp; counter_p <- counter_p+1
   
