@@ -1,21 +1,79 @@
 # plot lifespace metrics
 
+disp <- 1.23
+
+# get out a single day:
+doi <- as.POSIXct("2018-03-15") # day of interest YYYY-MM-DD
+traj.sample <- gps.traj %>% filter(timestamp>=doi, timestamp<=(doi %m+% days(1)))
+traj.sample %<>% mutate(events = ifelse(is.stay==1,"Stay","Move"),
+                        lat = lat-disp, lon=lon+disp)
+home.df <- data.frame(lon=home[1]+disp, lat=home[2]-disp)
+mcp.list <- get_mcp(traj.sample %>% select(lat,lon) %>% data.frame(), Qd)
+mcp.points <- mcp.list$mcp; remove(mcp.list)
+ar <- rbind(traj.sample %>% filter(homedist==max(homedist)) %>% select(lat, lon),
+                 home.df)
+
+
 # locations/events overlaid over GPS trace for all datapoints:
-plot_ly(df,
-        x=~lon, y=~lat,
+plot_ly(traj.sample,
+        x=~lon, y=~lat,     #check
         type = "scatter",
         mode = "markers",
-        color = ~is.stay,
-        colors = c("lightgrey","darkgrey")) %>%
-  add_trace(mcp, x=~lon, y=~lat, # outline of MCP
+        color = ~events,     #check
+        colors = c("lightgrey","black"),
+        marker = list(size = 8)) %>%
+        #colors = c("lightgrey","black")) %>%
+  add_trace(data = home.df, x=~lon, y=~lat, # home centroid      #check
             type = "scatter",
-            mode = "lines") %>%
-  add_trace(x=home[1], y=home[2], # home centroid
+            mode = "markers",
+            inherit = FALSE,
+            name = "Home",
+            marker = list(
+              color = "red",
+              size = 10,
+              line = list(color = "darkred", width = 2))) %>%
+  add_trace(data=mcp.points, x=~lon, y=~lat, # outline of MCP
             type = "scatter",
-            mode = "markers") %>%
-  add_trace(x=c(home[1],"lon of furthest stay centroid"), y=c(home[2],"lat of furthest stay centroid"), # action range
+            mode = "lines",
+            inherit = FALSE,
+            name = "MCP",
+            line = list(
+              color = "green",
+              width = 2)) %>%
+  add_trace(data = ar,
+            x=~lon, y=~lat,
             type = "scatter",
-            mode = "markers+lines")
+            mode = "lines",
+            inherit = FALSE,
+            name = "Action Range",
+            line = list(
+              color = "blue",
+              width = 2))%>%
+  layout(yaxis=list(title="latitude", titlefont = f2, tickfont = f2),
+         xaxis=list(title="longitude", titlefont = f2, tickfont = f2),
+         margin = list(l = 50, r = 50, b = 50, t = 50, pad = 4),
+         legend =  list(font = f2))
+
+plot_ly(data = traj.sample %>% filter(is.stay==0) %>% group_by(traj.event),
+        x=~lon, y=~lat,    
+        type = "scatter",
+        mode = "lines+markers",
+        color = ~as.factor(traj.event),
+        colors = "Spectral", #"Greens",
+        line = list(width = 3)) %>%
+  add_trace(data = traj.sample %>% filter(is.stay==1) %>% group_by(traj.event),
+          x=~lon, y=~lat,    
+          type = "scatter",
+          mode = "markers",
+          #color = "red",
+          inherit = FALSE,
+          name = "Stays",
+          marker = list(size = 10, color = "black")) %>%
+  layout(yaxis=list(title="latitude", titlefont = f2, tickfont = f2),
+         xaxis=list(title="longitude", titlefont = f2, tickfont = f2),
+         margin = list(l = 50, r = 50, b = 50, t = 50, pad = 4),
+         legend = list(font = f2))
+
 
 
 
