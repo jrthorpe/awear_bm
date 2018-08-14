@@ -24,7 +24,7 @@ f3 <- list(
   #color = "black"
 )
 l <- list(
-  font = f3
+  font = f2
   #bgcolor = "#E2E2E2",
   #bordercolor = "#FFFFFF",
   #borderwidth = 2

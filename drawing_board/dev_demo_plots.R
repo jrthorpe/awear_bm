@@ -49,10 +49,10 @@ plot_ly(traj.sample,
             line = list(
               color = "blue",
               width = 2))%>%
-  layout(yaxis=list(title="latitude", titlefont = f2, tickfont = f2),
-         xaxis=list(title="longitude", titlefont = f2, tickfont = f2),
+  layout(yaxis=list(title="latitude", titlefont = f1, tickfont = f2),
+         xaxis=list(title="longitude", titlefont = f1, tickfont = f2),
          margin = list(l = 50, r = 50, b = 50, t = 50, pad = 4),
-         legend =  list(font = f2))
+         legend =  list(font = f1))
 
 plot_ly(data = traj.sample %>% filter(is.stay==0) %>% group_by(traj.event),
         x=~lon, y=~lat,    
@@ -69,10 +69,10 @@ plot_ly(data = traj.sample %>% filter(is.stay==0) %>% group_by(traj.event),
           inherit = FALSE,
           name = "Stays",
           marker = list(size = 10, color = "black")) %>%
-  layout(yaxis=list(title="latitude", titlefont = f2, tickfont = f2),
-         xaxis=list(title="longitude", titlefont = f2, tickfont = f2),
+  layout(yaxis=list(title="latitude", titlefont = f1, tickfont = f2),
+         xaxis=list(title="longitude", titlefont = f1, tickfont = f2),
          margin = list(l = 50, r = 50, b = 50, t = 50, pad = 4),
-         legend = list(font = f2))
+         legend = list(font = f1))
 
 
 
