@@ -36,9 +36,9 @@ source("./Rscripts/users.R")
 
 # Define constants:
   folder <- "M:/PhD_Folder/CaseStudies/Data_dumps/dump_current_analysis/" # path to folder that holds multiple .csv files, downloaded from nightingale webportal
-  not.in.use <- c("battery", 
-                  "screen",
-                  "experience_sampling",
+  not.in.use <- c(#"battery", 
+                  #"screen",
+                  #"experience_sampling",
                   #"activity",
                   #"step_count",
                   #"location",
