@@ -114,7 +114,7 @@ for(p in p.codes){
       tmp.steps <- plot_ly(steps.dat %>% group_by(source),
                          x = ~timestamp, y = ~stepcounter,
                          height = 400,
-                         width = 1200,
+                         width = 500,
                          type = "scatter", mode = "lines+markers",
                          color = ~source, colors = colourset[4:5])  %>% #legendgroup = "Steps", 
       layout(yaxis = list(title="Step count", titlefont=f2, tickfont=f3), 

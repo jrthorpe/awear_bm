@@ -39,6 +39,7 @@ steptotals <-
     readRDS("./output_data/steptotals_anthurium.Rds")
   ) %>% 
   filter(!is.na(total.watch) & !is.na(total.phone) & total.watch>0 & total.phone>0) %>% 
+  filter(dates != "2018-06-19" & dates != "2018-10-07") %>% # limit Nina's data to 7 days
   mutate(id = 1:n())
 
 # metrics results: (old file location CaseStudies/Data_analysis/output)
