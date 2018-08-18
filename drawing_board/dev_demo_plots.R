@@ -1,5 +1,7 @@
 # plot lifespace metrics
 
+
+# Plots for the system paper to demonstrate the metrics: ----
 disp <- 1.23
 
 # get out a single day:
@@ -54,6 +56,7 @@ plot_ly(traj.sample,
          margin = list(l = 50, r = 50, b = 50, t = 50, pad = 4),
          legend =  list(font = f1))
 
+# plot trajectory events in chronological order
 plot_ly(data = traj.sample %>% filter(is.stay==0) %>% group_by(traj.event),
         x=~lon, y=~lat,    
         type = "scatter",
@@ -74,6 +77,7 @@ plot_ly(data = traj.sample %>% filter(is.stay==0) %>% group_by(traj.event),
          margin = list(l = 50, r = 50, b = 50, t = 50, pad = 4),
          legend = list(font = f1))
 
+# ---
 
 
 

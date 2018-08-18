@@ -1,0 +1,175 @@
+---
+title: "AWEAR Case studies analyses"
+author: "Julia Thorpe"
+date: "September 2018"
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+always_allow_html: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# For solving package install problem: https://stackoverflow.com/questions/5700505/windows-7-update-packages-problem-unable-to-move-temporary-installation
+# trace(utils:::unpackPkgZip, edit=TRUE) > line 140 (line 142 in R 3.4.4) > Sys.sleep(0.5) > Sys.sleep(2)
+
+# Load packages and functions.
+library(data.table)
+library(dtplyr)
+library(dplyr)
+library(magrittr)
+library(lubridate)
+library(ggplot2)
+library(reshape2)
+library(maptools)
+library(plotly)
+library(maps)
+library(mapproj)
+library(sp)
+library(caTools)
+library(geosphere) # added in v3 of data checker
+library(mapview) # added in v1 of analysis framework
+library(tidyr) # added for function "complete" in assessments section
+library(htmltools)
+library(RColorBrewer)
+#library(processx) # for saving static plotly graphics - NIU 
+library("readxl") # For reading in pilot data
+
+# Load custom functions:
+source("./Rscripts/jrt_utils.R")
+source("./Rscripts/jrt_mobility.R")
+source("./Rscripts/jrt_steps.R")
+source("./Rscripts/jrt_activity.R")
+source("./Rscripts/users.R")
+source("./Rscripts/stylesheet.R")
+
+# Select participant
+#p.codes <- "P03JJ" # single participant
+p.codes <- c("P03JJ","P06SS","P07MG","P08UH","P10JL","P13NB") # case studies
+```
+
+Load any results, set variables etc...
+
+For A1:
+
+* screen
+* battery
+* activity.bouts (available)
+* action range (needed) 
+* MCP polys (needed)
+
+_Note: may need windows for heatmap, could avoid heatmap by plotting large markers on scatter which would help with showing data availability_
+
+
+```{r load_data}
+
+# run load data script 
+
+
+
+```
+
+
+
+```{r A1_use}
+
+# screen on-off lines (line covering durations that screen is on)
+
+# battery charging lines (line covering durations that screen is on)
+
+
+```
+
+
+Plot activity and mobility over entire study period showing course of the day to get an idea of how much data is available and whether any patterns are evident.
+
+* activity lines (as in pilot but for all days)
+* mobility action range heat map
+* mcp shapes - colour by day of week (discrete) or date (continuous, gradient/ramp colours)
+
+
+```{r A1_features, eval=FALSE, include=FALSE}
+
+# All activity bouts over study period
+
+# Script to plot a timeline chart showing all activity bouts along a time axis for each day.
+bout_melt <- melt(activity.bouts, id.vars = c("dates","bout","activity"), 
+                  measure.vars = c("b.start","b.end")) %>% 
+  mutate(times = as.POSIXct(strftime(value, format="%H:%M:%S"), format="%H:%M:%S")) %>%
+  group_by(dates, activity, bout)
+
+# create time axis range covering 30 minutes before first / after last move of the day
+    # min.time <-  as.POSIXct("05:00:00", format="%H:%M:%S")
+    # max.time <-  as.POSIXct("23:00:00", format="%H:%M:%S")
+    # timeaxis$range <- as.numeric(c(min.time,max.time))*1000 # time axis defined in stylesheet script
+
+plot_ly(data = bout_melt %>% filter(activity == "Still"),
+        x = ~times,
+        y = ~dates,
+        type = "scatter",
+        mode = "lines",
+        line = list(color = "grey", width = 2),
+        name = "Still") %>%
+  add_trace(data = bout_melt %>% filter(activity == "Foot"),
+            x = ~times,
+            y = ~dates,
+            type = "scatter",
+            mode = "lines",
+            opacity = 0.5,
+            line = list(color = "red", width = 20),
+            name = "On Foot") %>%
+  add_trace(data = bout_melt %>% filter(activity == "Bicycle"),
+            x = ~times,
+            y = ~dates,
+            type = "scatter",
+            mode = "lines",
+            opacity = 0.5,
+            line = list(color = "blue", width = 20),
+            name = "Bicycle") %>%
+  add_trace(data = bout_melt %>% filter(activity == "Vehicle"),
+            x = ~times,
+            y = ~dates,
+            type = "scatter",
+            mode = "lines",
+            opacity = 0.5,
+            line = list(color = "green", width = 20),
+            name = "Vehicle") %>%
+        layout(xaxis = timeaxis,
+               #margin = list(l = 50, r = 50, b = 80, t = 50, pad = 4),
+               legend = l)  
+
+
+
+
+
+
+# MCP with day colour over a gradient?
+
+# Metrics...?
+
+
+
+```
+
+Examine distributions of the different metrics for the sake of interest and exploration.
+```{r A2_pre}
+
+
+```
+
+
+
+
+Compare perceptions with metrics (by day):
+
+```{r A2_mobility}
+
+
+```
+
+
+```{r A2_activity}
+
+```

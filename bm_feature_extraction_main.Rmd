@@ -55,7 +55,7 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
-```{r Define variables, eval=FALSE, include=FALSE}
+```{r Define variables}
 
 #, eval=FALSE, include=FALSE
 
@@ -85,9 +85,30 @@ acts <- c("Still", "Foot", "Vehicle", "Bicycle")
 
 ## Feature extraction
 
+Get the data that can be used directly without extracting any features (battery, screen)
+
+```{r direct_save, eval=FALSE, include=FALSE}
+
+for(p in p.codes){
+  P <- participants[[p]]
+  list2env(P, .GlobalEnv); remove(P)
+  d.study <- as.numeric(round(difftime(d.stop,d.start,units="days")))
+  datasets.all <- readRDS(paste0("./output_data/datasets_",p,".Rds"))
+
+# # battery
+# battery <- datasets.all$battery %>% 
+#   filter(accuracy<=loc.accuracy) %>% # get rid of data points with low accuracy
+#   select(lat, lon, timestamp, intervals.alt, dates, times)
+
+
+}
+
+```
+
+
 ### Mobility Features
 
-```{r MOBILITY, eval=FALSE, include=FALSE}
+```{r MOBILITY}
 
 for(p in p.codes){
   P <- participants[[p]]
@@ -106,6 +127,10 @@ mob.metrics <- get_metrics(traj.summary, gps.traj)
 mob.zones <- mobility_zones(traj.summary)
 
 #  save results
+p.homedist <- gps.traj %>% select(timestamp, dates, times, homedist) %>%
+  mutate(participant = p)
+saveRDS(p.traj,paste0("./output_data/homedist_",p,".Rds"))
+
 p.traj <- traj.summary %>% select(dates, traj.event, T.start, T.end, is.stay, loc.id, durations) %>%
   mutate(participant = p)
 saveRDS(p.traj,paste0("./output_data/traj_",p,".Rds"))
@@ -125,7 +150,7 @@ remove(loc.accuracy, dT, dD, time.threshold.stay, time.threshold.go, dist.thresh
 
 ### Steps
 
-```{r STEPS, eval=FALSE, include=FALSE}
+```{r STEPS}
 
 #, eval=FALSE, include=FALSE
 
@@ -162,7 +187,7 @@ remove(win.size, steps.log)
 
 ### Activity Features
 
-```{r ACTIVITY, eval=FALSE, include=FALSE}
+```{r ACTIVITY}
 
 for(p in p.codes){
   P <- participants[[p]]
