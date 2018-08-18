@@ -61,8 +61,8 @@ When you click the **Knit** button a document will be generated that includes bo
 
 # Select participant
 #p.codes <- "P03JJ" # single participant
-#p.codes <- c("P03JJ","P06SS","P07MG","P08UH","P10JL","P13NB") # case studies
-p.codes <- c("daisy","violet","agapantha","anthurium","nasturtium") # pilot #
+p.codes <- c("P03JJ","P06SS","P07MG","P08UH","P10JL","P13NB") # case studies
+#p.codes <- c("daisy","violet","agapantha","anthurium","nasturtium") # pilot #
 
 # Mobility:
 loc.accuracy <- 25 # threshold for accuracy of location points in meters
@@ -213,75 +213,4 @@ saveRDS(activity.bouts %>% mutate(participant=p),paste0("./output_data/activity_
 
 ```
 
-## Evaluation - Pilot 
 
-```{r pilot, echo=FALSE}
-
-p.codes <- c("daisy","violet","agapantha","anthurium","nasturtium") # pilot #
-
-# Load pilot data
-# note: Logsheest activities will be annotated, no logsheet step data.
-source("./Rscripts/pilot_data_load.R")
-source("./Rscripts/pilot_plotter.R")
-
-```
-
-# Time charts
-```{r timecharts, echo=FALSE}
-
-htmltools::tagList(plotlist_mob_act)
-
-```
-
-# Steps
-```{r stepcounters, echo=FALSE}
-
-htmltools::tagList(plotlist_steps)
-
-
-steps.diffs <- melt(steptotals, id.vars=c("dates", "participant", "id"))
-plot_ly(data = steps.diffs %>% group_by(id),
-        x = ~id,
-        y = ~value,
-        type = "scatter",
-        mode = "lines",
-        color = ~participant) %>%
-  add_trace(data = steps.diffs %>% ungroup(),
-            x = ~id,
-            y = ~value,
-            type = "scatter",
-            mode = "markers",
-            marker = list(color = "black"), 
-            symbol = ~variable,
-            inherit = FALSE) 
-
-
-```
-
-
-# Moblity Metrics
-```{r mobmetrics, echo=FALSE}
-
-# Comparison of mobility metrics calculated from logsheets vs algorithm data
-# note: dataset created in data load file
-
-# compare time out of home:
-plot_ly(metrics.compare, #can also use separate .log and .alg and add_trace to generate same plot
-        x=~Day,
-        y=~Tt.out,
-        type = "scatter",
-        mode = "lines+markers",
-        color = ~participant,
-        linetype = ~results) %>%  
-  layout(yaxis = list(title="Time out of home in hours"))
-
-# compare places visited: 
-subplot(plotlist_places, nrows = 2, margin=c(0.01,0.01,0.05,0.05), shareY = TRUE, shareX = TRUE)
-
-# tabulate metrics results:
-metrics.tab <- metrics.combined %>% mutate(diff.tt = Tt.out - Tt.out.logs)
-metrics.tab %<>% mutate(diff.places = N.places - N.places.logs)
-metrics.tab %>% group_by(participant) %>% summarise(t.out = mean(diff.tt), n.places = mean(diff.places))
-metrics.tab %>% group_by(participant) %>% summarise(t.out = mean(diff.tt), n.places = mean(diff.places))
-
-```
