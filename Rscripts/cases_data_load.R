@@ -7,7 +7,7 @@ screen <-
     readRDS("./output_data/screen_P08UH.Rds"),
     readRDS("./output_data/screen_P10JL.Rds"),
     readRDS("./output_data/screen_P13NB.Rds")
-  )
+  ) %>% ungroup()
 
 # battery
 battery <-
@@ -18,11 +18,21 @@ battery <-
     readRDS("./output_data/battery_P08UH.Rds"),
     readRDS("./output_data/battery_P10JL.Rds"),
     readRDS("./output_data/battery_P13NB.Rds")
-  )
+  ) %>% ungroup()
 
+# trajectories
+traj <-
+  rbind.data.frame(
+    readRDS("./output_data/traj_P03JJ.Rds"),
+    readRDS("./output_data/traj_P06SS.Rds"),
+    readRDS("./output_data/traj_P07MG.Rds"),
+    readRDS("./output_data/traj_P08UH.Rds"),
+    readRDS("./output_data/traj_P10JL.Rds"),
+    readRDS("./output_data/traj_P13NB.Rds")
+  ) %>% ungroup()
 
 # action range
-homedist <-
+actionrange <-
   rbind.data.frame(
     readRDS("./output_data/homedist_P03JJ.Rds"),
     readRDS("./output_data/homedist_P06SS.Rds"),
@@ -30,7 +40,7 @@ homedist <-
     readRDS("./output_data/homedist_P08UH.Rds"),
     readRDS("./output_data/homedist_P10JL.Rds"),
     readRDS("./output_data/homedist_P13NB.Rds")
-  )
+  ) %>% ungroup()
 
 # activities
 activities <-
@@ -41,7 +51,7 @@ activities <-
     readRDS("./output_data/activity_P08UH.Rds"),
     readRDS("./output_data/activity_P10JL.Rds"),
     readRDS("./output_data/activity_P13NB.Rds")
-  )
+  ) %>% ungroup()
 
 
 

@@ -9,6 +9,11 @@ output:
 always_allow_html: yes
 ---
 
+Some first results from visualising data for all participants.
+
+All of the plots below follow the same format: time along horizontal axis and dates up vertical axis, plotting the entire participation period for each participant. (Note: ignore date at start of all the time axes, which likely show a current or recent date).
+
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
@@ -38,11 +43,11 @@ library(RColorBrewer)
 library("readxl") # For reading in pilot data
 
 # Load custom functions:
-source("./Rscripts/jrt_utils.R")
-source("./Rscripts/jrt_mobility.R")
-source("./Rscripts/jrt_steps.R")
-source("./Rscripts/jrt_activity.R")
-source("./Rscripts/users.R")
+#source("./Rscripts/jrt_utils.R")
+#source("./Rscripts/jrt_mobility.R")
+#source("./Rscripts/jrt_steps.R")
+#source("./Rscripts/jrt_activity.R")
+#source("./Rscripts/users.R")
 source("./Rscripts/stylesheet.R")
 
 # Select participant
@@ -50,100 +55,67 @@ source("./Rscripts/stylesheet.R")
 p.codes <- c("P03JJ","P06SS","P07MG","P08UH","P10JL","P13NB") # case studies
 ```
 
-Load any results, set variables etc...
-
-For A1:
-
-* screen
-* battery
-* activity.bouts (available)
-* action range (needed) 
-* MCP polys (needed)
-
-_Note: may need windows for heatmap, could avoid heatmap by plotting large markers on scatter which would help with showing data availability_
 
 
-```{r load_data}
+```{r load_data, echo=FALSE}
+# Load any results, set variables etc...
+# 
+# For A1:
+# 
+# * screen
+# * battery
+# * activity.bouts (available)
+# * action range (needed) 
+# * MCP polys (needed)
+# 
+# Note: may need windows for heatmap, could avoid heatmap by plotting large markers on scatter which would help with showing data availability
 
 # run load data script 
 source("./Rscripts/cases_data_load.R")
 
-
 ```
 
+## A1. Feasibility
+
+### Device Interaction
+Plots showing participants interaction with the phone, including time the screen is on and battery levels/charging patterns (instructions were to charge devices at night).
 
 
-```{r A1_use}
+Screen-on duration plots:
+```{r A1_use_screen, echo=FALSE}
+
+source("./Rscripts/cases_plotter.R")
 
 # screen on-off lines (line covering durations that screen is on)
-
-# battery charging lines (line covering durations that screen is on)
-
-
+htmltools::tagList(screen.plots)
 ```
 
 
-Plot activity and mobility over entire study period showing course of the day to get an idea of how much data is available and whether any patterns are evident.
+Battery levels/charging patterns:
 
-* activity lines (as in pilot but for all days)
-* mobility action range heat map
-* mcp shapes - colour by day of week (discrete) or date (continuous, gradient/ramp colours)
+```{r A1_use_battery, echo=FALSE}
+# battery charging lines (line covering durations that screen is on)
+htmltools::tagList(battery.plots.A)
+htmltools::tagList(battery.plots.B)
 
+```
 
-```{r A1_features, eval=FALSE, include=FALSE}
+### Behavioural data
+Plots showing (a rough idea of) activity and mobility over entire study period. These are meant to give an idea of how much data is available and whether any patterns are evident.
+
+Activity bouts
+```{r A1_features_act, echo=FALSE}
 
 # All activity bouts over study period
+htmltools::tagList(activity.plots)
 
-# Script to plot a timeline chart showing all activity bouts along a time axis for each day.
-bout_melt <- melt(activity.bouts, id.vars = c("dates","bout","activity"), 
-                  measure.vars = c("b.start","b.end")) %>% 
-  mutate(times = as.POSIXct(strftime(value, format="%H:%M:%S"), format="%H:%M:%S")) %>%
-  group_by(dates, activity, bout)
+```
 
-# create time axis range covering 30 minutes before first / after last move of the day
-    # min.time <-  as.POSIXct("05:00:00", format="%H:%M:%S")
-    # max.time <-  as.POSIXct("23:00:00", format="%H:%M:%S")
-    # timeaxis$range <- as.numeric(c(min.time,max.time))*1000 # time axis defined in stylesheet script
+Mobility: plots showing trajectories (stays and moves) along time axis with colour indicating distance from home centroid (in ranges)
 
-plot_ly(data = bout_melt %>% filter(activity == "Still"),
-        x = ~times,
-        y = ~dates,
-        type = "scatter",
-        mode = "lines",
-        line = list(color = "grey", width = 2),
-        name = "Still") %>%
-  add_trace(data = bout_melt %>% filter(activity == "Foot"),
-            x = ~times,
-            y = ~dates,
-            type = "scatter",
-            mode = "lines",
-            opacity = 0.5,
-            line = list(color = "red", width = 20),
-            name = "On Foot") %>%
-  add_trace(data = bout_melt %>% filter(activity == "Bicycle"),
-            x = ~times,
-            y = ~dates,
-            type = "scatter",
-            mode = "lines",
-            opacity = 0.5,
-            line = list(color = "blue", width = 20),
-            name = "Bicycle") %>%
-  add_trace(data = bout_melt %>% filter(activity == "Vehicle"),
-            x = ~times,
-            y = ~dates,
-            type = "scatter",
-            mode = "lines",
-            opacity = 0.5,
-            line = list(color = "green", width = 20),
-            name = "Vehicle") %>%
-        layout(xaxis = timeaxis,
-               #margin = list(l = 50, r = 50, b = 80, t = 50, pad = 4),
-               legend = l)  
-
-
-
-
-
+```{r A1_features_mob, echo=FALSE}
+# Distance from home
+htmltools::tagList(mobility.plots)
 
 # MCP with day colour over a gradient?
 
@@ -153,7 +125,10 @@ plot_ly(data = bout_melt %>% filter(activity == "Still"),
 
 ```
 
-Examine distributions of the different metrics for the sake of interest and exploration.
+## A2. Comparison between participant perceptions and sensor-derived measures 
+###(not yet available)
+
+Examine distributions of the different metrics
 ```{r A2_pre}
 
 

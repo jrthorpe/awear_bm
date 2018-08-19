@@ -138,14 +138,17 @@ source("./Rscripts/mod_traj.R")
 # mob.metrics <- get_metrics(traj.summary, gps.traj)
 # mob.zones <- mobility_zones(traj.summary)
 
-#  save results
-p.homedist <- gps.traj %>% select(timestamp, dates, times, homedist) %>%
-  mutate(participant = p)
-saveRDS(p.homedist,paste0("./output_data/homedist_",p,".Rds"))
-
-# p.traj <- traj.summary %>% select(dates, traj.event, T.start, T.end, is.stay, loc.id, durations) %>%
+# #  save results
+# p.homedist <- gps.traj %>% select(timestamp, dates, times, homedist) %>%
 #   mutate(participant = p)
-# saveRDS(p.traj,paste0("./output_data/traj_",p,".Rds"))
+# saveRDS(p.homedist,paste0("./output_data/homedist_",p,".Rds"))
+
+p.traj <- traj.summary %>% select(dates, 
+                                  T.start, T.end, durations, 
+                                  traj.event, is.stay, loc.id, 
+                                  is.home, action.range) %>%
+  mutate(participant = p)
+saveRDS(p.traj,paste0("./output_data/traj_",p,".Rds"))
 # 
 # p.metrics <- mob.metrics %>% select(dates, Tt.out, N.places) %>%
 #   #filter(dates < as.POSIXct("2018-06-24") | dates > as.POSIXct("2018-07-06")) %>% # for Nina only
