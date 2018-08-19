@@ -66,7 +66,7 @@ _Note: may need windows for heatmap, could avoid heatmap by plotting large marke
 ```{r load_data}
 
 # run load data script 
-
+source("./Rscripts/cases_data_load.R")
 
 
 ```
