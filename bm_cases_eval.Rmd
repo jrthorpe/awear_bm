@@ -73,6 +73,7 @@ p.codes <- c("P03JJ","P06SS","P07MG","P08UH","P10JL","P13NB") # case studies
 # run load data script 
 source("./Rscripts/cases_data_load.R")
 
+source("./Rscripts/cases_plotter.R")
 ```
 
 ## A1. Feasibility
@@ -82,9 +83,8 @@ Plots showing participants interaction with the phone, including time the screen
 
 
 Screen-on duration plots:
-```{r A1_use_screen, echo=FALSE}
+```{r A1_use_screen, eval=FALSE, include=FALSE}
 
-source("./Rscripts/cases_plotter.R")
 
 # screen on-off lines (line covering durations that screen is on)
 htmltools::tagList(screen.plots)
@@ -93,10 +93,10 @@ htmltools::tagList(screen.plots)
 
 Battery levels/charging patterns:
 
-```{r A1_use_battery, echo=FALSE}
+```{r A1_use_battery, eval=FALSE, include=FALSE}
 # battery charging lines (line covering durations that screen is on)
 htmltools::tagList(battery.plots.A)
-htmltools::tagList(battery.plots.B)
+#htmltools::tagList(battery.plots.B)
 
 ```
 
