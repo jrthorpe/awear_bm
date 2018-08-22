@@ -116,6 +116,16 @@ Mobility: plots showing trajectories (stays and moves) along time axis with colo
 ```{r A1_features_mob, echo=FALSE}
 # Distance from home
 htmltools::tagList(mobility.plots)
+htmltools::tagList(mcp.plots)
+
+plot_ly() %>%
+  add_polygons(data=mcp %>% group_by(participant,dates),
+               x=~lon, 
+               y=~lat,
+               #type="scatter",
+               #mode = "lines",
+               color = ~participant,
+               colors = "Spectral")
 
 # MCP with day colour over a gradient?
 
