@@ -355,6 +355,33 @@ get_mcp <- function(locations, Qd) {
   return(list(mcp=mcp, mcp.poly=mcp.poly, centroid=centroid))
 }
 
+get_mcp_points <- function(df) {
+  # calculates minimum convex polygon from GPS data
+  #
+  
+  #browser() #for debugging
+  locations <- df %>% select(lon,lat) %>% data.frame()
+
+  # calculate distances from all points to centroid of the location data
+  centroid <- apply(locations,2,mean)
+  distances <- sqrt(((locations[, 1] - centroid[1])^2) + ((locations[, 2] - centroid[2])^2))
+  
+  # get subset of points within specified quantile of distances
+  indx <- 1:length(distances)
+  percentages <- indx[distances <= quantile(distances, 0.99)]
+  locations.subset <- locations[percentages, ]
+  
+  # get minimum convex polygon
+  mcp.points <- chull(locations.subset[, 1], locations.subset[, 2]) # index of points that lie on mcp
+  mcp <- locations.subset[mcp.points,] # coords of mcp
+  mcp <- rbind(mcp[nrow(mcp), ], mcp) # repeat last point to close shape
+  
+  return(mcp)
+}
+
+
+
+
 mobility_zones <- function(traj.summary){
   
   # ** Mobility Zones ----
@@ -379,3 +406,13 @@ mobility_zones <- function(traj.summary){
   return(mobility.zones)
 }
 
+score_converter <- function(metric, N){
+  
+  Q <- quantile(metric, probs = c(1:N)/N)
+  scores <- cut(metric,
+      breaks = c(-1,Q) %>% as.numeric(), #put -1 instead of 0 incase the first Q is zero. No metrics have negative values, therefore no difference between -1:Q1 range and 0:Q1 range.
+      labels = c(1:N))
+  
+  return(scores %>% as.numeric())
+  
+}

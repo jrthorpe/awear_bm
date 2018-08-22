@@ -5,6 +5,7 @@ battery.plots.A <- list()
 battery.plots.B <- list()
 activity.plots <- list()
 mobility.plots <- list()
+mcp.plots <- list()
 
 i <- 1 #counter
 
@@ -79,6 +80,35 @@ for(p in p.codes){
            #margin = list(l = 50, r = 50, b = 80, t = 50, pad = 4),
            legend = l)
   
+  p.mcp <- mcp %>% filter(participant == p) %>% ungroup()
+  p.mcp %<>% mutate(dweek =  weekdays(as.Date(dates)))
+  mcp.plots[[i]] <-   plot_ly() %>%
+    add_polygons(data=p.mcp %>% group_by(dates), 
+                 x=~lon, 
+                 y=~lat, 
+                 #type="scatter", 
+                 #mode = "lines", 
+                 color = ~dweek,
+                 colors = "Spectral")
+    
+    # plot_ly(p.mcp %>% group_by(dates), 
+    #       x=~lon, 
+    #       y=~lat, 
+    #       type="scatter", 
+    #       mode = "lines", 
+    #       color = ~dweek,
+    #       colors = "Spectral")
+  
+  # plot_ly() %>%
+  #   add_polygons(data=mcp %>% group_by(participant,dates), 
+  #         x=~lon, 
+  #         y=~lat, 
+  #         #type="scatter", 
+  #         #mode = "lines", 
+  #         color = ~participant,
+  #         colors = "Spectral")
+  
+  
   
   # activity plots
   p.activity <- activities %>% filter(participant == p)
@@ -127,6 +157,33 @@ for(p in p.codes){
   i <- i+1
   
 }
+# 
+# plot_ly(metrics,
+#         x=~dates,
+#         y=~AR.max,
+#         type = "scatter",
+#         mode = "markers",
+#         color= ~participant)
+# 
+# plot_ly(metrics,
+#         x=~dates,
+#         y=~dist.total,
+#         type = "scatter",
+#         mode = "markers",
+#         color= ~participant)
+# 
+# plot_ly(metrics,
+#         x=~dates,
+#         y=~mcp.area,
+#         type = "scatter",
+#         mode = "markers",
+#         color= ~participant)
+
+
+
+
+
+
 
 
 # 
