@@ -1,6 +1,8 @@
 # plot lifespace metrics
 
 
+# First run feature extraction just for one participant to get "gps.traj"
+
 # Plots for the system paper to demonstrate the metrics: ----
 disp <- 1.23
 
@@ -78,8 +80,6 @@ plot_ly(data = traj.sample %>% filter(is.stay==0) %>% group_by(traj.event),
          legend = list(font = f1))
 
 # ---
-
-
 
 
 
