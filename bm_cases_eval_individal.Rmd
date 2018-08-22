@@ -1,0 +1,250 @@
+---
+title: "AWEAR Case studies analyses"
+author: "Julia Thorpe"
+date: "September 2018"
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+always_allow_html: yes
+---
+
+Some first results from visualising data for all participants.
+
+All of the plots below follow the same format: time along horizontal axis and dates up vertical axis, plotting the entire participation period for each participant. (Note: ignore date at start of all the time axes, which likely show a current or recent date).
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# For solving package install problem: https://stackoverflow.com/questions/5700505/windows-7-update-packages-problem-unable-to-move-temporary-installation
+# trace(utils:::unpackPkgZip, edit=TRUE) > line 140 (line 142 in R 3.4.4) > Sys.sleep(0.5) > Sys.sleep(2)
+
+# Load packages and functions.
+library(data.table)
+library(dtplyr)
+library(dplyr)
+library(magrittr)
+library(lubridate)
+library(ggplot2)
+library(reshape2)
+library(maptools)
+library(plotly)
+library(maps)
+library(mapproj)
+library(sp)
+library(caTools)
+library(geosphere) # added in v3 of data checker
+library(mapview) # added in v1 of analysis framework
+library(tidyr) # added for function "complete" in assessments section
+library(htmltools)
+library(RColorBrewer)
+library("readxl") # For reading in pilot data
+
+# Load custom functions:
+source("./Rscripts/stylesheet.R")
+
+```
+
+Possibly merge all results from all participants into one dataset to make it easier to plot the various subsets. These should include a row per day per participant with the following columnns:
+
+* all mobility metrics
+* ES answers
+* metrics derived from acitivity bouts (e.g. still periods, use of bike/foot/vehicle as transport)
+* daily stepcount (watch and phone each own column)
+
+
+```{r data_load}
+
+# select participant for analysis
+p <- "P13NB"
+
+# load data for current participant
+p.metrics <- readRDS(paste0("./output_data/metrics_",p,".Rds"))
+p.es <- readRDS(paste0("./output_data/es_",p,".Rds"))
+
+```
+
+
+Visualising the data as a first impression
+* Distributions for each of the metrics
+* Filter and repeat
+
+```{r}
+
+b <- 200
+
+hist(p.metrics$AR.max, breaks=b)
+hist(p.metrics$AR.mean, breaks=b)
+hist(p.metrics$dist.total, breaks=b)
+hist(p.metrics$dist.max, breaks=b)
+hist(p.metrics$mcp.area, breaks=b)
+
+hist(as.numeric(p.metrics$Tt.move), breaks=48)
+hist(as.numeric(p.metrics$Tt.out), breaks=48)
+
+```
+
+Now filter the data and repeat
+
+```{r}
+
+
+p.metrics.filt <- p.metrics %>% filter(AR.max < 20000)
+b <-20
+hist(p.metrics.filt$AR.max, breaks=b)
+hist(p.metrics.filt$AR.mean, breaks=b)
+hist(p.metrics.filt$dist.total, breaks=b)
+hist(p.metrics.filt$dist.max, breaks=b)
+hist(p.metrics.filt$mcp.area, breaks=b)
+
+hist(as.numeric(p.metrics.filt$Tt.move), breaks=48)
+hist(as.numeric(p.metrics.filt$Tt.out), breaks=48)
+
+
+prbs <- c(1:5)/5
+quantile(p.metrics.filt$AR.max, probs = prbs)
+quantile(p.metrics.filt$dist.total, probs = prbs)
+
+```
+Now look at relation between data and ES
+
+* Show ranges of each variable against the answers (could have a plot per metrics including all participants as traces)
+
+TO ADD: ES activity answers and
+* step counts, watch/phone (whichever is higher) 
+* still periods 
+
+
+```{r}
+
+p.es.mob <- p.es %>% filter(question_id=="jrt_mobility")
+p.compare.mob <- merge(x=p.metrics.filt, y=p.es.mob, by="dates")
+
+plot_ly(p.compare.mob %>% group_by(answer),
+        x=~AR.max,
+        y=~answer,
+        type = "scatter",
+        mode = "markers+lines") %>%
+  add_trace(x=~dist.total)
+
+plot_ly(p.compare.mob %>% group_by(answer),
+        x=~Tt.move,
+        y=~answer,
+        type = "scatter",
+        mode = "markers+lines") %>%
+  add_trace(x=~Tt.out)
+
+plot_ly(p.compare.mob %>% group_by(answer),
+        x=~N.places,
+        y=~answer,
+        type = "scatter",
+        mode = "markers+lines") %>%
+  add_trace(x=~N.moves)
+
+
+```
+Convert the metrics to scores and compare with ES answers directly, include:
+* Table showing which is most correlated (should end up demonstrating that a combo is best)
+* Spatial, Temporal and Counts (not sure about counts?!)
+
+Could make "distance", "temporal" and "count" scores and one total overall combo
+
+TO ADD: convert activity features to scores, including:
+* step counts, watch/phone (whichever is higher) 
+* still periods 
+
+Compare with activity scores as per other plots.
+
+
+```{r convert}
+
+
+test <- p.compare.mob %>% mutate(
+  AR.max.score = score_converter(p.compare.mob$AR.max, N=5),
+  dist.total.score = score_converter(p.compare.mob$dist.total, N=5),
+  mcp.score = score_converter(p.compare.mob$mcp.area %>% as.numeric(), N=5),
+  Tt.move.score = score_converter(p.compare.mob$Tt.move %>% as.numeric(), N=5),
+  Tt.out.score = score_converter(p.compare.mob$Tt.out %>% as.numeric(), N=5)
+)
+
+test %<>% mutate(combo = (AR.max.score+dist.total.score+Tt.move.score+Tt.out.score)/4)
+
+# AR.max.score <- score_converter(p.compare.mob$AR.max, N=5)
+# dist.total.score <- score_converter(p.compare.mob$dist.total, N=5)
+# Tt.move.score <- score_converter(p.compare.mob$Tt.move %>% as.numeric(), N=5)
+# Tt.out.score <- score_converter(p.compare.mob$Tt.out %>% as.numeric(), N=5)
+# 
+# test <- cbind(p.compare.mob$dates,
+#               p.compare.mob$answer,
+#               AR.max.score,
+#               dist.total.score,
+#               Tt.move.score,
+#               Tt.out.score) %>% as.data.frame()
+
+plot_ly(test,
+        x=~dates,
+        y=~answer,
+        type = "scatter",
+        mode = "lines",
+        line = list(color="red", width=6),
+        width = 1500) %>%
+  add_trace(y=~AR.max.score, line = list(color="cyan", width=2)) %>%
+  add_trace(y=~dist.total.score, line = list(color="lightblue", width=2)) %>%
+  add_trace(y=~Tt.move.score, line = list(color="blue", width=2)) %>%
+  add_trace(y=~Tt.out.score, line = list(color="darkblue", width=2)) %>%
+  add_trace(y=~combo, line = list(color="green", width=4))
+
+test %>% summarise(ar.max.diff = mean(abs(AR.max.score-answer)),
+                   dist.total.diff = mean(abs(dist.total.score-answer)),
+                   mcp.diff = mean(abs(mcp.score-answer)),
+                   Tt.move.diff = mean(abs(Tt.move.score-answer)),
+                   Tt.out.diff = mean(abs(Tt.out.score-answer)),
+                   combo.diff = mean(abs(combo-answer)))
+
+
+plot_ly(test,
+        x=~AR.max,
+        y=~Tt.out,
+        type = "scatter",
+        mode = "markers",
+        color = ~answer, 
+        marker = list(size=15))
+
+plot_ly(test,
+        x=~dist.total,
+        y=~Tt.out,
+        type = "scatter",
+        mode = "markers",
+        color = ~answer, 
+        marker = list(size=15))
+
+plot_ly(test,
+        x=~N.places,
+        y=~N.stay.out,
+        type = "scatter",
+        mode = "markers",
+        color = ~answer, 
+        marker = list(size=15))
+
+plot_ly(test,
+        x=~dates,
+        y=~answer/max(answer),
+        type = "scatter",
+        mode = "lines",
+        line = list(color="red", width=6),
+        width = 1500) %>%
+  add_trace(y=~N.stay.out/max(N.stay.out), line = list(color="cyan", width=2)) %>%
+  add_trace(y=~N.places/max(N.places), line = list(color="lightblue", width=2))
+
+
+
+
+
+
+```
+
+Comparison with baseline data:
+
+* mobility zones (LSA)
+* activity: transport and still periods (GPAQ)
