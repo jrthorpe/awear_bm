@@ -67,15 +67,52 @@ activities <-
 
 # Analysis 2 ----
 
+# Daily measures:
 
-# metrics
-metrics <-
+# mobility metrics
+metrics.mob <-
   rbind.data.frame(
-    readRDS("./output_data/metrics_P03JJs.Rds"),
-    readRDS("./output_data/metrics_P06SSs.Rds"),
-    readRDS("./output_data/metrics_P07MGs.Rds"),
-    readRDS("./output_data/metrics_P08UHs.Rds"),
-    readRDS("./output_data/metrics_P10JLs.Rds"),
-    readRDS("./output_data/metrics_P13NBs.Rds")
+    readRDS("./output_data/metrics_P03JJ.Rds"),
+    readRDS("./output_data/metrics_P06SS.Rds"),
+    readRDS("./output_data/metrics_P07MG.Rds"),
+    readRDS("./output_data/metrics_P08UH.Rds"),
+    readRDS("./output_data/metrics_P10JL.Rds"),
+    readRDS("./output_data/metrics_P13NB.Rds")
   ) %>% ungroup()
+
+# activity bouts summarised by day
+act.pday <-
+  rbind.data.frame(
+    readRDS("./output_data/activity_pday_P03JJ.Rds"),
+    readRDS("./output_data/activity_pday_P06SS.Rds"),
+    readRDS("./output_data/activity_pday_P07MG.Rds"),
+    readRDS("./output_data/activity_pday_P08UH.Rds"),
+    readRDS("./output_data/activity_pday_P10JL.Rds"),
+    readRDS("./output_data/activity_pday_P13NB.Rds")
+  ) %>% ungroup()
+
+# transit activity summarised by day
+act.trans.pday <-
+  rbind.data.frame(
+    readRDS("./output_data/activity_moves_pday_P03JJ.Rds"),
+    readRDS("./output_data/activity_moves_pday_P06SS.Rds"),
+    readRDS("./output_data/activity_moves_pday_P07MG.Rds"),
+    readRDS("./output_data/activity_moves_pday_P08UH.Rds"),
+    readRDS("./output_data/activity_moves_pday_P10JL.Rds"),
+    readRDS("./output_data/activity_moves_pday_P13NB.Rds")
+  ) %>% ungroup()
+
+# total daily steps
+stepsdaily <-
+  rbind.data.frame(
+    readRDS("./output_data/steptotals_P03JJ.Rds"),
+    readRDS("./output_data/steptotals_P06SS.Rds"),
+    readRDS("./output_data/steptotals_P07MG.Rds"),
+    readRDS("./output_data/steptotals_P08UH.Rds"),
+    readRDS("./output_data/steptotals_P10JL.Rds"),
+    readRDS("./output_data/steptotals_P13NB.Rds")
+  ) %>% ungroup()
+
+
+# Create a combined activity features by day plot:
 
