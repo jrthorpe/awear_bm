@@ -43,6 +43,7 @@ library("readxl") # For reading in pilot data
 
 # Load custom functions:
 source("./Rscripts/stylesheet.R")
+source("./Rscripts/JRT_utils.R")
 
 ```
 
@@ -56,12 +57,19 @@ Possibly merge all results from all participants into one dataset to make it eas
 
 ```{r data_load}
 
-# select participant for analysis
-p <- "P13NB"
 
-# load data for current participant
-p.metrics <- readRDS(paste0("./output_data/metrics_",p,".Rds"))
-p.es <- readRDS(paste0("./output_data/es_",p,".Rds"))
+p.codes <- c("P03JJ","P06SS","P07MG","P08UH","P10JL","P13NB") # case studies
+
+# # select participant for analysis
+# p <- "P10JL"
+# 
+# # load data for current participant
+# p.metrics <- readRDS(paste0("./output_data/metrics_",p,".Rds"))
+# p.es <- readRDS(paste0("./output_data/es_",p,".Rds"))
+
+# load complete datasets
+source("./Rscripts/cases_data_load.R")
+source("./Rscripts/cases_plotter_A2.R")
 
 ```
 
@@ -72,16 +80,48 @@ Visualising the data as a first impression
 
 ```{r}
 
-b <- 200
 
-hist(p.metrics$AR.max, breaks=b)
-hist(p.metrics$AR.mean, breaks=b)
-hist(p.metrics$dist.total, breaks=b)
-hist(p.metrics$dist.max, breaks=b)
-hist(p.metrics$mcp.area, breaks=b)
 
-hist(as.numeric(p.metrics$Tt.move), breaks=48)
-hist(as.numeric(p.metrics$Tt.out), breaks=48)
+# MOBILITY
+
+# dataset metrics.mob, go through all metrics for all participants.
+subplot(hist.mob.ar)
+subplot(hist.mob.dist)
+subplot(hist.mob.mcp)
+subplot(hist.mob.Tmove)
+subplot(hist.mob.Tout)
+subplot(hist.mob.Nplace)
+subplot(hist.mob.Nmove)
+
+# b <- 100
+# # spatial
+# hist(p.metrics$AR.max/1000, breaks=b)
+# hist(p.metrics$dist.total/1000, breaks=b)
+# hist(p.metrics$mcp.area, breaks=b)
+# 
+# 
+# p.ar <- plot_ly(x =p.metrics$AR.max/1000, type = "histogram")
+# p.dt <- plot_ly(x =p.metrics$dist.total/1000, type = "histogram")
+# 
+# subplot(p.ar,p.dt)
+# 
+# # temporal
+# hist(as.numeric(p.metrics$Tt.move), breaks=48)
+# hist(as.numeric(p.metrics$Tt.out), breaks=48)
+# 
+# # count
+# hist(p.metrics$N.places, breaks=10)
+# hist(p.metrics$N.moves, breaks=10)
+
+# ACTIVITY
+
+# steps
+
+# bouts
+
+
+
+
 
 ```
 
@@ -201,7 +241,6 @@ test %>% summarise(ar.max.diff = mean(abs(AR.max.score-answer)),
                    Tt.move.diff = mean(abs(Tt.move.score-answer)),
                    Tt.out.diff = mean(abs(Tt.out.score-answer)),
                    combo.diff = mean(abs(combo-answer)))
-
 
 plot_ly(test,
         x=~AR.max,
