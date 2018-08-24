@@ -67,12 +67,12 @@ for(p in p.codes){
   p.compare <- plot_ly(data = mobility.compare %>% 
                          filter(participant == p, answer > 0) %>% 
                          group_by(answer),
-                       name = p, width = 1200, height = 300)
+                       name = p, width = 1200, height = 300, opacity = 0.8)
   
   p.compare.filt <- plot_ly(data = mobility.compare %>% 
                               filter(participant == p, answer > 0, AR.max < dist.cutoff) %>% 
                               group_by(answer),
-                       name = p, width = 1200, height = 300)
+                       name = p, width = 1200, height = 300, opacity = 0.8)
   
   # create plots for comparing ES answers to ranges of each metric
   range.compare.ar[[p]] <- p.compare.filt %>% add_markers(x = ~AR.max, 
@@ -209,14 +209,22 @@ for(p in p.codes){
 #   add_histogram(data = mobility.compare %>% filter(participant == "P03JJ", AR.max < dist.cutoff, answer == 5), x = ~N.moves) %>%
 #   layout(barmode = "overlay")
 
-
-
-
-
-
-
-
-
+# tester <- list()
+# 
+# for(i in c(1:6)){
+#   p <- p.codes[i]
+# test <- mobility.compare %>% filter(participant == p, AR.max < 50000)
+# Nb <- 10
+# h1 <- plot_ly(test %>% filter(answer==1), x=~AR.max, type = "histogram") #, nbinsx = Nb
+# h2 <- plot_ly(test %>% filter(answer==2), x=~AR.max, type = "histogram")
+# h3 <- plot_ly(test %>% filter(answer==3), x=~AR.max, type = "histogram")
+# h4 <- plot_ly(test %>% filter(answer==4), x=~AR.max, type = "histogram")
+# h5 <- plot_ly(test %>% filter(answer==5), x=~AR.max, type = "histogram")
+# 
+# tester[[i]] <- subplot(h1,h2,h3,h4,h5, nrows = 5, shareX = TRUE, shareY = TRUE)
+# 
+# }
+# subplot(tester)
 
 
 
