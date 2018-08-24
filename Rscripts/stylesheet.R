@@ -6,6 +6,7 @@
 # colours
 colourset <- brewer.pal(9, "Set1")
 colours.compare <- brewer.pal(3, "Set2")
+greys <- brewer.pal(9, "Greys")
 
 # fonts
 f1 <- list(
@@ -30,6 +31,7 @@ l <- list(
   #borderwidth = 2
   )
 
+w <- 1000 # width for plots
 
 # annotations for subplot titles
 anno_subtitle <- list(
@@ -57,6 +59,18 @@ timeaxis <- list(
   #range = c(2,5)#,
   #tickcolor = toRGB("blue")
 )
+
+# hist.yaxis <- list(
+#   title = "Count (days)",
+#   titlefont = f2,
+#   tickfont = f3
+# )
+# 
+# hist.xaxis.spatial <- list(
+#   title = "kilometers",
+#   titlefont = f2,
+#   tickfont = f3
+# )
 
 stdaxis <- list(
   titlefont = f1,

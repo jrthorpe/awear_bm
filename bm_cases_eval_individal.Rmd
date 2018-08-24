@@ -55,10 +55,12 @@ Possibly merge all results from all participants into one dataset to make it eas
 * daily stepcount (watch and phone each own column)
 
 
-```{r data_load}
+```{r data_load, include=FALSE}
 
 
 p.codes <- c("P03JJ","P06SS","P07MG","P08UH","P10JL","P13NB") # case studies
+
+dist.cutoff <- 50000 # for filtering AR.max to not get holidays 
 
 # # select participant for analysis
 # p <- "P10JL"
@@ -69,6 +71,7 @@ p.codes <- c("P03JJ","P06SS","P07MG","P08UH","P10JL","P13NB") # case studies
 
 # load complete datasets
 source("./Rscripts/cases_data_load.R")
+
 source("./Rscripts/cases_plotter_A2.R")
 
 ```
@@ -78,40 +81,27 @@ Visualising the data as a first impression
 * Distributions for each of the metrics
 * Filter and repeat
 
-```{r}
-
-
+```{r echo=FALSE}
 
 # MOBILITY
+n <- 1
+# Spatial
+subplot(hist.mob.ar, nrows=n) %>% layout(title="Action range")
+subplot(hist.mob.dist, nrows=n) %>% layout(title="Distance covered")
+subplot(hist.mob.mcp, nrows=n) %>% layout(title="Minimum convex polygon")
 
-# dataset metrics.mob, go through all metrics for all participants.
-subplot(hist.mob.ar)
-subplot(hist.mob.dist)
-subplot(hist.mob.mcp)
-subplot(hist.mob.Tmove)
-subplot(hist.mob.Tout)
-subplot(hist.mob.Nplace)
-subplot(hist.mob.Nmove)
+# Spatial - Filtered
+subplot(hist.mob.ar.f, nrows=n) %>% layout(title="Action range (filtered)")
+subplot(hist.mob.dist.f, nrows=n) %>% layout(title="Distance covered (filtered)")
+subplot(hist.mob.mcp.f, nrows=n) %>% layout(title="Minimum convex polygon (filtered)")
 
-# b <- 100
-# # spatial
-# hist(p.metrics$AR.max/1000, breaks=b)
-# hist(p.metrics$dist.total/1000, breaks=b)
-# hist(p.metrics$mcp.area, breaks=b)
-# 
-# 
-# p.ar <- plot_ly(x =p.metrics$AR.max/1000, type = "histogram")
-# p.dt <- plot_ly(x =p.metrics$dist.total/1000, type = "histogram")
-# 
-# subplot(p.ar,p.dt)
-# 
-# # temporal
-# hist(as.numeric(p.metrics$Tt.move), breaks=48)
-# hist(as.numeric(p.metrics$Tt.out), breaks=48)
-# 
-# # count
-# hist(p.metrics$N.places, breaks=10)
-# hist(p.metrics$N.moves, breaks=10)
+# Temporal
+subplot(hist.mob.Tmove, nrows=n) %>% layout(title="Time spent moving between places")
+subplot(hist.mob.Tout, nrows=n) %>% layout(title="Time spent out of home")
+
+# Counts
+subplot(hist.mob.Nplace, nrows=n) %>% layout(title="Number of unique places visited")
+subplot(hist.mob.Nmove, nrows=n) %>% layout(title="Number of moves between places")
 
 # ACTIVITY
 
@@ -120,33 +110,8 @@ subplot(hist.mob.Nmove)
 # bouts
 
 
-
-
-
 ```
 
-Now filter the data and repeat
-
-```{r}
-
-
-p.metrics.filt <- p.metrics %>% filter(AR.max < 20000)
-b <-20
-hist(p.metrics.filt$AR.max, breaks=b)
-hist(p.metrics.filt$AR.mean, breaks=b)
-hist(p.metrics.filt$dist.total, breaks=b)
-hist(p.metrics.filt$dist.max, breaks=b)
-hist(p.metrics.filt$mcp.area, breaks=b)
-
-hist(as.numeric(p.metrics.filt$Tt.move), breaks=48)
-hist(as.numeric(p.metrics.filt$Tt.out), breaks=48)
-
-
-prbs <- c(1:5)/5
-quantile(p.metrics.filt$AR.max, probs = prbs)
-quantile(p.metrics.filt$dist.total, probs = prbs)
-
-```
 Now look at relation between data and ES
 
 * Show ranges of each variable against the answers (could have a plot per metrics including all participants as traces)
@@ -156,34 +121,49 @@ TO ADD: ES activity answers and
 * still periods 
 
 
-```{r}
+```{r es_metrics_spread}
 
-p.es.mob <- p.es %>% filter(question_id=="jrt_mobility")
-p.compare.mob <- merge(x=p.metrics.filt, y=p.es.mob, by="dates")
+# mobility answers + metrics:
+subplot(range.compare.ar, shareY=TRUE) %>% layout(title="Action Range")
+subplot(range.compare.dist, shareY=TRUE) %>% layout(title="Distance covered")
+subplot(range.compare.mcp, shareY=TRUE) %>% layout(title="MCP")
 
-plot_ly(p.compare.mob %>% group_by(answer),
-        x=~AR.max,
-        y=~answer,
-        type = "scatter",
-        mode = "markers+lines") %>%
-  add_trace(x=~dist.total)
+subplot(range.compare.Tout, shareY=TRUE) %>% layout(title="Time out of home")
+subplot(range.compare.Tmove, shareY=TRUE) %>% layout(title="Time moving")
 
-plot_ly(p.compare.mob %>% group_by(answer),
-        x=~Tt.move,
-        y=~answer,
-        type = "scatter",
-        mode = "markers+lines") %>%
-  add_trace(x=~Tt.out)
+subplot(range.compare.Nplaces, shareY=TRUE) %>% layout(title="N places")
+subplot(range.compare.Nmoves, shareY=TRUE) %>% layout(title="N moves")
 
-plot_ly(p.compare.mob %>% group_by(answer),
-        x=~N.places,
-        y=~answer,
-        type = "scatter",
-        mode = "markers+lines") %>%
-  add_trace(x=~N.moves)
+
+
+# # For single participant
+# p.es.mob <- p.es %>% filter(question_id=="jrt_mobility")
+# p.compare.mob <- merge(x=p.metrics, y=p.es.mob, by="dates")
+# 
+# plot_ly(p.compare.mob %>% group_by(answer),
+#         x=~AR.max,
+#         y=~answer,
+#         type = "scatter",
+#         mode = "markers+lines") %>%
+#   add_trace(x=~dist.total)
+# 
+# plot_ly(p.compare.mob %>% group_by(answer),
+#         x=~Tt.move,
+#         y=~answer,
+#         type = "scatter",
+#         mode = "markers+lines") %>%
+#   add_trace(x=~Tt.out)
+# 
+# plot_ly(p.compare.mob %>% group_by(answer),
+#         x=~N.places,
+#         y=~answer,
+#         type = "scatter",
+#         mode = "markers+lines") %>%
+#   add_trace(x=~N.moves)
 
 
 ```
+
 Convert the metrics to scores and compare with ES answers directly, include:
 * Table showing which is most correlated (should end up demonstrating that a combo is best)
 * Spatial, Temporal and Counts (not sure about counts?!)
@@ -197,91 +177,27 @@ TO ADD: convert activity features to scores, including:
 Compare with activity scores as per other plots.
 
 
-```{r convert}
 
+```{r scoring}
 
-test <- p.compare.mob %>% mutate(
-  AR.max.score = score_converter(p.compare.mob$AR.max, N=5),
-  dist.total.score = score_converter(p.compare.mob$dist.total, N=5),
-  mcp.score = score_converter(p.compare.mob$mcp.area %>% as.numeric(), N=5),
-  Tt.move.score = score_converter(p.compare.mob$Tt.move %>% as.numeric(), N=5),
-  Tt.out.score = score_converter(p.compare.mob$Tt.out %>% as.numeric(), N=5)
-)
+subplot(met.scores, nrows=6) %>% layout(title="comparison with scores")
 
-test %<>% mutate(combo = (AR.max.score+dist.total.score+Tt.move.score+Tt.out.score)/4)
-
-# AR.max.score <- score_converter(p.compare.mob$AR.max, N=5)
-# dist.total.score <- score_converter(p.compare.mob$dist.total, N=5)
-# Tt.move.score <- score_converter(p.compare.mob$Tt.move %>% as.numeric(), N=5)
-# Tt.out.score <- score_converter(p.compare.mob$Tt.out %>% as.numeric(), N=5)
+# tester<- metrics.mob %>%
+#   group_by(participant) %>%
+#   do(quantile(.$AR.max, probs = prbs) %>% data.frame() %>% tibble::rownames_to_column("Q")) %>% 
+#   rename(AR.max.q = ".")
 # 
-# test <- cbind(p.compare.mob$dates,
-#               p.compare.mob$answer,
-#               AR.max.score,
-#               dist.total.score,
-#               Tt.move.score,
-#               Tt.out.score) %>% as.data.frame()
-
-plot_ly(test,
-        x=~dates,
-        y=~answer,
-        type = "scatter",
-        mode = "lines",
-        line = list(color="red", width=6),
-        width = 1500) %>%
-  add_trace(y=~AR.max.score, line = list(color="cyan", width=2)) %>%
-  add_trace(y=~dist.total.score, line = list(color="lightblue", width=2)) %>%
-  add_trace(y=~Tt.move.score, line = list(color="blue", width=2)) %>%
-  add_trace(y=~Tt.out.score, line = list(color="darkblue", width=2)) %>%
-  add_trace(y=~combo, line = list(color="green", width=4))
-
-test %>% summarise(ar.max.diff = mean(abs(AR.max.score-answer)),
-                   dist.total.diff = mean(abs(dist.total.score-answer)),
-                   mcp.diff = mean(abs(mcp.score-answer)),
-                   Tt.move.diff = mean(abs(Tt.move.score-answer)),
-                   Tt.out.diff = mean(abs(Tt.out.score-answer)),
-                   combo.diff = mean(abs(combo-answer)))
-
-plot_ly(test,
-        x=~AR.max,
-        y=~Tt.out,
-        type = "scatter",
-        mode = "markers",
-        color = ~answer, 
-        marker = list(size=15))
-
-plot_ly(test,
-        x=~dist.total,
-        y=~Tt.out,
-        type = "scatter",
-        mode = "markers",
-        color = ~answer, 
-        marker = list(size=15))
-
-plot_ly(test,
-        x=~N.places,
-        y=~N.stay.out,
-        type = "scatter",
-        mode = "markers",
-        color = ~answer, 
-        marker = list(size=15))
-
-plot_ly(test,
-        x=~dates,
-        y=~answer/max(answer),
-        type = "scatter",
-        mode = "lines",
-        line = list(color="red", width=6),
-        width = 1500) %>%
-  add_trace(y=~N.stay.out/max(N.stay.out), line = list(color="cyan", width=2)) %>%
-  add_trace(y=~N.places/max(N.places), line = list(color="lightblue", width=2))
-
-
-
+# test %>% summarise(ar.max.diff = mean(abs(AR.max.score-answer)),
+#                    dist.total.diff = mean(abs(dist.total.score-answer)),
+#                    mcp.diff = mean(abs(mcp.score-answer)),
+#                    Tt.move.diff = mean(abs(Tt.move.score-answer)),
+#                    Tt.out.diff = mean(abs(Tt.out.score-answer)),
+#                    combo.diff = mean(abs(combo-answer)))
 
 
 
 ```
+
 
 Comparison with baseline data:
 
