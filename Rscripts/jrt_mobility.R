@@ -405,14 +405,3 @@ mobility_zones <- function(traj.summary){
   
   return(mobility.zones)
 }
-
-score_converter <- function(metric, N){
-  
-  Q <- quantile(metric, probs = c(1:N)/N)
-  scores <- cut(metric,
-      breaks = c(-1,Q) %>% as.numeric(), #put -1 instead of 0 incase the first Q is zero. No metrics have negative values, therefore no difference between -1:Q1 range and 0:Q1 range.
-      labels = c(1:N))
-  
-  return(scores %>% as.numeric())
-  
-}
