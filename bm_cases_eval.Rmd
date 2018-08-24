@@ -103,6 +103,8 @@ htmltools::tagList(battery.plots.A)
 ### Behavioural data
 Plots showing (a rough idea of) activity and mobility over entire study period. These are meant to give an idea of how much data is available and whether any patterns are evident.
 
+TO ADD: step counts!
+
 Activity bouts
 ```{r A1_features_act, echo=FALSE}
 
@@ -132,29 +134,5 @@ plot_ly() %>%
 # Metrics...?
 
 
-
-```
-
-## A2. Comparison between participant perceptions and sensor-derived measures 
-###(not yet available)
-
-Examine distributions of the different metrics
-```{r A2_pre}
-
-
-```
-
-
-
-
-Compare perceptions with metrics (by day):
-
-```{r A2_mobility}
-
-
-```
-
-
-```{r A2_activity}
 
 ```
