@@ -114,5 +114,17 @@ stepsdaily <-
   ) %>% ungroup()
 
 
+# experience sampling
+es <-
+  rbind.data.frame(
+    readRDS("./output_data/es_P03JJ.Rds"),
+    readRDS("./output_data/es_P06SS.Rds"),
+    readRDS("./output_data/es_P07MG.Rds"),
+    readRDS("./output_data/es_P08UH.Rds"),
+    readRDS("./output_data/es_P10JL.Rds"),
+    readRDS("./output_data/es_P13NB.Rds")
+  ) %>% ungroup()
+
+
 # Create a combined activity features by day plot:
 
