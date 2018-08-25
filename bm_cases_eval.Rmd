@@ -73,7 +73,7 @@ p.codes <- c("P03JJ","P06SS","P07MG","P08UH","P10JL","P13NB") # case studies
 # run load data script 
 source("./Rscripts/cases_data_load.R")
 
-source("./Rscripts/cases_plotter.R")
+source("./Rscripts/cases_plotter_A1.R")
 ```
 
 ## A1. Feasibility
@@ -110,6 +110,9 @@ Activity bouts
 
 # All activity bouts over study period
 htmltools::tagList(activity.plots)
+
+# All steps over study period
+htmltools::tagList(steps.plots)
 
 ```
 

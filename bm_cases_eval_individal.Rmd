@@ -105,9 +105,14 @@ subplot(hist.mob.Nmove, nrows=n) %>% layout(title="Number of moves between place
 
 # ACTIVITY
 
-# steps
+# steps:
+# total steps
+subplot(hist.act.steps, nrows=n) %>% layout(title="Daily stepcount") # PROBLEMS!
 
-# bouts
+# bouts: 
+# still periods during the most (active time of) day (6am-10pm)
+# total time walking/bike
+# total number of walking/bike bouts
 
 
 ```

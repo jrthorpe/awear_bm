@@ -3,9 +3,12 @@
 screen.plots <- list()
 battery.plots.A <- list()
 battery.plots.B <- list()
+
 activity.plots <- list()
+steps.plots <- list()
 mobility.plots <- list()
 mcp.plots <- list()
+
 
 i <- 1 #counter
 
@@ -153,6 +156,34 @@ for(p in p.codes){
            title=p, titlefont = f1,
            #margin = list(l = 50, r = 50, b = 80, t = 50, pad = 4),
            legend = l)
+  
+  
+  
+  # steps plots
+  p.steps <- stepsdaily %>% filter(participant == p)
+  
+  steps.plots[[i]] <- plot_ly(p.steps %>% group_by(device),
+                              x = ~dates,
+                              y = ~steps,
+                              color = ~device,
+                              colors = colourset[1:2],
+                              type = "scatter",
+                              mode = "markers+lines") %>%
+    layout(title=p)
+  
+  # Replaced step count signals with daily steps to be more visually comprehendible and less data (was slowing everything down)
+  # p.steps <- stepcounters %>% filter(participant == p)
+  # 
+  # steps.plots[[i]] <- plot_ly(p.steps %>% group_by(source),
+  #                             x = ~timestamp,
+  #                             y = ~stepcounter,
+  #                             color = ~source,
+  #                             colors = colourset[1:2],
+  #                             type = "scatter",
+  #                             mode = "markers+lines")
+  
+  
+  
   
   i <- i+1
   

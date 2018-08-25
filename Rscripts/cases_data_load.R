@@ -65,6 +65,19 @@ activities <-
   ) %>% ungroup()
 
 
+# activities
+stepcounters <-
+  rbind.data.frame(
+    readRDS("./output_data/stepcounters_P03JJ.Rds"),
+    readRDS("./output_data/stepcounters_P06SS.Rds"),
+    readRDS("./output_data/stepcounters_P07MG.Rds"),
+    readRDS("./output_data/stepcounters_P08UH.Rds"),
+    readRDS("./output_data/stepcounters_P10JL.Rds"),
+    readRDS("./output_data/stepcounters_P13NB.Rds")
+  ) %>% ungroup()
+
+
+
 # Analysis 2 ----
 
 # Daily measures:
@@ -111,8 +124,9 @@ stepsdaily <-
     readRDS("./output_data/steptotals_P08UH.Rds"),
     readRDS("./output_data/steptotals_P10JL.Rds"),
     readRDS("./output_data/steptotals_P13NB.Rds")
-  ) %>% ungroup()
-
+  ) %>% ungroup() %>%
+  mutate(steps = pmax(total.phone, total.watch, na.rm = TRUE))
+stepsdaily %<>% mutate(device = ifelse(total.phone==steps,"phone","watch"))
 
 # experience sampling
 es <-

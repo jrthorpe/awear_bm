@@ -17,6 +17,7 @@ hist.mob.Tmove <- list()
 hist.mob.Nplace <- list()
 hist.mob.Nmove <- list()
 
+hist.act.steps <- list()
 
 # Comparing metrics ranges to ES answers: ----
 
@@ -42,26 +43,32 @@ met.scores <- list()
 for(p in p.codes){
   
   # create basic plots with data for current participant
-  p.hist <- plot_ly(data = metrics.mob %>% filter(participant == p), 
+  p.hist.mob <- plot_ly(data = metrics.mob %>% filter(participant == p), 
                     name = p, width = 1200, height = 300)
   
-  p.hist.filt <- plot_ly(data = metrics.mob %>% filter(participant == p, AR.max < dist.cutoff), # action range limit of 50km
-                         name = p, width = 1200, height = 300)
+  p.hist.mob.filt <- plot_ly(data = metrics.mob %>% filter(participant == p, AR.max < dist.cutoff), # action range limit of 50km
+                         name = p, width = 1200, height = 300)  
+  
+  p.hist.act.steps <- plot_ly(data = stepsdaily %>% filter(participant == p),
+                             name = p, width = 1200, height = 300)
   
   # create each participant-metrics histogram
-  hist.mob.ar[[p]] <- p.hist %>% add_histogram(x = ~AR.max/1000)
-  hist.mob.dist[[p]] <- p.hist %>% add_histogram(x = ~dist.total/1000) # in km
-  hist.mob.mcp[[p]] <- p.hist %>% add_histogram(x = ~mcp.area)
+  hist.mob.ar[[p]] <- p.hist.mob %>% add_histogram(x = ~AR.max/1000)
+  hist.mob.dist[[p]] <- p.hist.mob %>% add_histogram(x = ~dist.total/1000) # in km
+  hist.mob.mcp[[p]] <- p.hist.mob %>% add_histogram(x = ~mcp.area)
   
-  hist.mob.Tout[[p]] <- p.hist %>% add_histogram(x = ~Tt.out)
-  hist.mob.Tmove[[p]] <- p.hist %>% add_histogram(x = ~Tt.move)
+  hist.mob.Tout[[p]] <- p.hist.mob %>% add_histogram(x = ~Tt.out)
+  hist.mob.Tmove[[p]] <- p.hist.mob %>% add_histogram(x = ~Tt.move)
   
-  hist.mob.Nplace[[p]] <- p.hist %>% add_histogram(x = ~N.places)
-  hist.mob.Nmove[[p]] <- p.hist %>% add_histogram(x = ~N.moves)
+  hist.mob.Nplace[[p]] <- p.hist.mob %>% add_histogram(x = ~N.places)
+  hist.mob.Nmove[[p]] <- p.hist.mob %>% add_histogram(x = ~N.moves)
   
-  hist.mob.ar.f[[p]] <- p.hist.filt %>% add_histogram(x = ~AR.max/1000)     # in km
-  hist.mob.dist.f[[p]] <- p.hist.filt %>% add_histogram(x = ~dist.total/1000) # in km
-  hist.mob.mcp.f[[p]] <- p.hist.filt %>% add_histogram(x = ~mcp.area)
+  hist.mob.ar.f[[p]] <- p.hist.mob.filt %>% add_histogram(x = ~AR.max/1000)     # in km
+  hist.mob.dist.f[[p]] <- p.hist.mob.filt %>% add_histogram(x = ~dist.total/1000) # in km
+  hist.mob.mcp.f[[p]] <- p.hist.mob.filt %>% add_histogram(x = ~mcp.area)
+  
+  hist.act.steps[[p]] <- p.hist.act.steps %>% add_histogram(x = ~steps)
+
   
   # create basic plots for comparing ES answers to metrics
   p.compare <- plot_ly(data = mobility.compare %>% 
