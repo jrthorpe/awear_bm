@@ -139,3 +139,31 @@ plot_ly() %>%
 
 
 ```
+
+
+###Adherence & Data availabliity
+Describe adherence in terms of how many recording days and es answers there are for the number of days participation
+
+```{r adherence}
+
+
+
+es.mobility <- es %>% filter(question_id=="jrt_mobility" | question_id=="mobility_P03")
+es.activity <- es %>% filter(question_id=="jrt_activity" | question_id=="activity_P03")
+
+es.adherence.mob <- merge(
+  metrics.mob %>% group_by(participant) %>% summarise(data.records=n()),
+  es.mobility %>% group_by(participant) %>% summarise(self.reports=n()),
+  by="participant"
+) %>% 
+  mutate(adherence=paste0(round(100*self.reports/data.records),"%"))
+
+es.adherence.act <- merge(
+  metrics.act %>% group_by(participant) %>% summarise(data.records=n()),
+  es.activity %>% group_by(participant) %>% summarise(self.reports=n()),
+  by="participant"
+) %>% 
+  mutate(adherence=paste0(round(100*self.reports/data.records),"%"))
+
+```
+
