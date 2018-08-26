@@ -25,8 +25,11 @@ hist.act.Tstill <- list()
 # Comparing metrics ranges to ES answers: ----
 
 # create required datasets:
-es.mobility <- es %>% filter(question_id=="jrt_mobility")
+es.mobility <- es %>% filter(question_id=="jrt_mobility" | question_id=="mobility_P03")
 mobility.compare <- merge(x=metrics.mob, y=es.mobility, by=c("participant", "dates"))
+
+es.activity <- es %>% filter(question_id=="jrt_activity" | question_id=="activity_P03")
+activity.compare <- merge(x=metrics.act, y=es.activity, by=c("participant", "dates"))
 
 range.compare.ar <- list()
 range.compare.dist <- list()
@@ -38,9 +41,16 @@ range.compare.Tmove <- list()
 range.compare.Nplaces <- list()
 range.compare.Nmoves <- list()
 
+range.compare.activeT <- list()
+range.compare.activeB <- list()
+range.compare.still <- list()
+range.compare.steps <- list()
+
 # Comparing metrics scores to ES answers
-met.scores.data <- list()
-met.scores <- list()
+mob.scores.data <- list()
+mob.scores <- list()
+act.scores.data <- list()
+act.scores <- list()
 
 
 for(p in p.codes){
@@ -52,10 +62,7 @@ for(p in p.codes){
   p.hist.mob.filt <- plot_ly(data = metrics.mob %>% filter(participant == p, AR.max < dist.cutoff), # action range limit of 50km
                          name = p, width = 1200, height = 300)  
   
-  p.hist.steps <- plot_ly(data = stepsdaily %>% filter(participant == p),
-                             name = p, width = 1200, height = 300)
-  
-  p.hist.act <- plot_ly(data = act.features %>% filter(participant == p),
+  p.hist.act <- plot_ly(data = metrics.act %>% filter(participant == p),
                               name = p, width = 1200, height = 300)
   
   # create each participant-metrics histogram
@@ -73,53 +80,91 @@ for(p in p.codes){
   hist.mob.dist.f[[p]] <- p.hist.mob.filt %>% add_histogram(x = ~dist.total/1000) # in km
   hist.mob.mcp.f[[p]] <- p.hist.mob.filt %>% add_histogram(x = ~mcp.area)
   
-  hist.act.steps[[p]] <- p.hist.steps %>% add_histogram(x = ~steps)
+  hist.act.steps[[p]] <- p.hist.act %>% add_histogram(x = ~steps)
   hist.act.Tactive[[p]] <- p.hist.act %>% add_histogram(x = ~active.time)
   hist.act.Nactive[[p]] <- p.hist.act %>% add_histogram(x = ~active.bouts)
   hist.act.Tstill[[p]] <- p.hist.act %>% add_histogram(x = ~still.time)
 
   
   # create basic plots for comparing ES answers to metrics
-  p.compare <- plot_ly(data = mobility.compare %>% 
+  p.compare.mob <- plot_ly(data = mobility.compare %>% 
                          filter(participant == p, answer > 0) %>% 
                          group_by(answer),
                        name = p, width = 1200, height = 300, opacity = 0.8)
   
-  p.compare.filt <- plot_ly(data = mobility.compare %>% 
+  p.compare.mob.filt <- plot_ly(data = mobility.compare %>% 
                               filter(participant == p, answer > 0, AR.max < dist.cutoff) %>% 
                               group_by(answer),
                        name = p, width = 1200, height = 300, opacity = 0.8)
   
+  p.compare.act <- plot_ly(data = activity.compare %>% 
+                              filter(participant == p, answer > 0) %>% 
+                              group_by(answer),
+                            name = p, width = 1200, height = 300, opacity = 0.8)
+  
   # create plots for comparing ES answers to ranges of each metric
-  range.compare.ar[[p]] <- p.compare.filt %>% add_markers(x = ~AR.max, 
+  range.compare.ar[[p]] <- p.compare.mob.filt %>% add_markers(x = ~AR.max, 
                                                           y=~answer,
                                                           marker = list(size=10))
-  range.compare.dist[[p]] <- p.compare.filt %>% add_markers(x = ~dist.total, 
+  range.compare.dist[[p]] <- p.compare.mob.filt %>% add_markers(x = ~dist.total, 
                                                             y=~answer,
                                                             marker = list(size=10))
-  range.compare.mcp[[p]] <- p.compare.filt %>% add_markers(x = ~mcp.area, 
+  range.compare.mcp[[p]] <- p.compare.mob.filt %>% add_markers(x = ~mcp.area, 
                                                            y=~answer,
                                                            marker = list(size=10))
-  range.compare.Tout[[p]] <- p.compare.filt %>% add_markers(x = ~Tt.out, 
+  range.compare.Tout[[p]] <- p.compare.mob.filt %>% add_markers(x = ~Tt.out, 
                                                             y=~answer,
                                                             marker = list(size=10))
-  range.compare.Tmove[[p]] <- p.compare %>% add_markers(x = ~Tt.move, 
+  range.compare.Tmove[[p]] <- p.compare.mob %>% add_markers(x = ~Tt.move, 
                                                         y=~answer,
                                                         marker = list(size=10))
-  range.compare.Nplaces[[p]] <- p.compare %>% add_markers(x = ~N.places, 
+  range.compare.Nplaces[[p]] <- p.compare.mob %>% add_markers(x = ~N.places, 
                                                           y=~answer,
                                                           marker = list(size=10))
-  range.compare.Nmoves[[p]] <- p.compare %>% add_markers(x = ~N.moves,
+  range.compare.Nmoves[[p]] <- p.compare.mob %>% add_markers(x = ~N.moves,
                                                          y=~answer,
                                                          marker = list(size=10))
+  range.compare.activeT[[p]] <- p.compare.act %>% add_markers(x = ~active.time,
+                                                             y=~answer,
+                                                             marker = list(size=10))
+  range.compare.activeB[[p]] <- p.compare.act %>% add_markers(x = ~active.bouts,
+                                                             y=~answer,
+                                                             marker = list(size=10))
+  range.compare.still[[p]] <- p.compare.act %>% add_markers(x = ~still.time,
+                                                            y=~answer,
+                                                            marker = list(size=10))
+  range.compare.steps[[p]] <- p.compare.act %>% add_markers(x = ~steps,
+                                                            y=~answer,
+                                                            marker = list(size=10))
+  # clean up environment by removing Current variables
+  remove(
+    p.compare.act,
+    p.compare.mob,
+    p.compare.mob.filt,
+    p.hist.act,
+    p.hist.mob,
+    p.hist.mob.filt
+    )
 }  
 
 # create scores for each metrics based on quantiles to compare with ES answers
 
 for(p in p.codes){  
+  
+  # metrics
   metrics.mob.p  <- metrics.mob %>% filter(participant == p, AR.max < dist.cutoff)
-  N <- 5
-  scores.p <- data.frame(
+  metrics.act.p <- metrics.act %>% filter(participant == p)
+  
+  # experience sampling answers
+  es.mobility.p <- es.mobility %>% filter(participant == p)
+  es.activity.p <- es.activity %>% filter(participant == p)
+  
+  # convert metrics to scores
+  
+  N <- 5 # number of scores to categorise data into
+  
+  # mobility
+  mob.scores.p <- data.frame(
     AR.score = score_converter(metrics.mob.p$AR.max, N=N),
     dist.score = score_converter(metrics.mob.p$dist.total, N=N),
     mcp.score = score_converter(metrics.mob.p$mcp.area %>% as.numeric(), N=N),
@@ -133,24 +178,48 @@ for(p in p.codes){
     participant = p
   )
   
-  scores.p %<>% mutate(spatial = (AR.score+dist.score+mcp.score)/3,
+  # include combination scores
+  mob.scores.p %<>% mutate(spatial = (AR.score+dist.score+mcp.score)/3,
                        temporal = (Tmove.score+Tout.score)/2,
                        counts = (Nplaces.score+Nmoves.score)/2,
                        combo = (AR.score+dist.score+mcp.score+
                                   Tmove.score+Tout.score+
                                   Nplaces.score+Nmoves.score)/7)
-
   
-  es.mobility.p <- es %>% filter(question_id=="jrt_mobility", participant == p)
-  met.scores.d <- merge(x=scores.p, y=es.mobility.p, by=c("dates", "participant"))
+  mob.scores.d <- merge(x=mob.scores.p, y=es.mobility.p, by=c("dates", "participant"))
+  
+  # activity
+  act.scores.p <- data.frame(
+    activeT.score = score_converter(metrics.act.p$active.time, N=N),
+    activeB.score = score_converter(metrics.act.p$active.bouts, N=N),
+    still.score = score_converter(metrics.act.p$still.time %>% as.numeric(), N=N),
+    steps.score = score_converter(metrics.act.p$steps, N=N),
+    dates = metrics.act.p$dates,
+    participant = p
+  )
+  
+  # include combination scores
+  act.scores.p %<>% mutate(combo = ((activeT.score+
+                                       activeB.score+
+                                       still.score+
+                                       steps.score)/4))
+  
+  # merge with es answers and store in dataset
+  act.scores.d <- merge(x=act.scores.p, y=es.activity.p, by=c("dates", "participant"))
+  
+  # exclude one random es answer right at start followed by long gap
   if(p=="P03JJ"){
-    met.scores.d <- met.scores.d[-1,]
+    mob.scores.d <- mob.scores.d[-1,]
+    act.scores.d <- act.scores.d[-1,]
   }
-  met.scores.data[[p]] <- met.scores.d
-
-    
+  
+  
+  
+  # create individual plots:
+  
   anno_subtitle$text <- p  # anno_subtitle defined in stylesheet script
-  p.scores <- plot_ly(data = met.scores.d,
+  
+  p.scores.mob <- plot_ly(data = mob.scores.d,
                       x=~dates,
                       y=~answer,
                       type = "scatter",
@@ -160,30 +229,51 @@ for(p in p.codes){
                       width = 1200,
                       height = 1200,
                       name = "self-report")
-  p.scores %<>% 
+  p.scores.mob %<>% 
     add_trace(y = ~spatial, name="spatial", line = list(color=greys[3], width=2, dash = "dot")) %>%
     add_trace(y = ~temporal, name="temporal", line = list(color=greys[4], width=2, dash = "dot")) %>%
     add_trace(y = ~counts, name="counts", line = list(color=greys[5], width=2, dash = "dot")) %>%
     add_trace(y = ~combo, name="combined", line = list(color="black", width=2)) %>%
     layout(annotations = anno_subtitle,
            margin = list(l = 50, r = 50, b = 50, t = 50, pad = 5))
-    
-  met.scores[[p]] <- p.scores
   
-  # plot_ly(test,
-  #         x=~dates,
-  #         y=~answer,
-  #         type = "scatter",
-  #         mode = "lines",
-  #         line = list(color="red", width=6),
-  #         width = 1500) %>%
-  #   add_trace(y=~AR.max.score, line = list(color="cyan", width=2)) %>%
-  #   add_trace(y=~dist.total.score, line = list(color="lightblue", width=2)) %>%
-  #   add_trace(y=~Tt.move.score, line = list(color="blue", width=2)) %>%
-  #   add_trace(y=~Tt.out.score, line = list(color="darkblue", width=2)) %>%
-  #   add_trace(y=~combo, line = list(color="green", width=4))
+  p.scores.act <- plot_ly(data = act.scores.d,
+                          x=~dates,
+                          y=~answer,
+                          type = "scatter",
+                          mode = "lines",
+                          line = list(color="red", width=4),
+                          showlegend = ifelse(p=="P03JJ",TRUE,FALSE),
+                          width = 1200,
+                          height = 1200,
+                          name = "self-report")
+  p.scores.act %<>% 
+    add_trace(y = ~activeT.score, name="active time", line = list(color=greys[3], width=2, dash = "dot")) %>%
+    add_trace(y = ~activeB.score, name="active bouts", line = list(color=greys[4], width=2, dash = "dot")) %>%
+    add_trace(y = ~still.score, name="still time", line = list(color=greys[5], width=2, dash = "dot")) %>%
+    add_trace(y = ~steps.score, name="steps", line = list(color=greys[5], width=2, dash = "dot")) %>%
+    add_trace(y = ~combo, name="combined", line = list(color="black", width=2)) %>%
+    layout(annotations = anno_subtitle,
+           margin = list(l = 50, r = 50, b = 50, t = 50, pad = 5))
   
   
+  mob.scores.data[[p]] <- mob.scores.d
+  act.scores.data[[p]] <- act.scores.d
+  mob.scores[[p]] <- p.scores.mob
+  act.scores[[p]] <- p.scores.act
+  
+  
+  remove(
+    metrics.mob.p,
+    metrics.act.p,
+    mob.scores.p,
+    act.scores.p,
+    p.scores.mob,
+    p.scores.act,
+    mob.scores.d,
+    act.scores.d
+  )
+
 }
 
 

@@ -165,6 +165,10 @@ stepsdaily <-
   mutate(steps = pmax(total.phone, total.watch, na.rm = TRUE))
 stepsdaily %<>% mutate(device = ifelse(total.phone==steps,"phone","watch"))
 
+# merge the steps and activity features into one set:
+metrics.act <- merge(act.features, stepsdaily, by = c("participant","dates"),all=T)
+metrics.act$steps[is.na(metrics.act$steps)] <- 0 # replaces the one NA in the steps data with 0
+
 # experience sampling
 es <-
   rbind.data.frame(
@@ -177,5 +181,12 @@ es <-
   ) %>% ungroup()
 
 
-# Create a combined activity features by day plot:
+
+# Remove all datasets not required for the analyses:
+remove(
+  act.features,
+  act.pday,
+  act.trans.pday,
+  active.features
+  )
 

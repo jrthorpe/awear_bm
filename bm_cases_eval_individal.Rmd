@@ -112,6 +112,23 @@ subplot(hist.act.Tactive, nrows=n) %>% layout(title="Time spent on foot/bike")
 subplot(hist.act.Nactive, nrows=n) %>% layout(title="Number of foot/bike bouts") 
 subplot(hist.act.Tstill, nrows=n) %>% layout(title="Time spent still between 6am and 10pm") 
 
+remove(
+  hist.act.Nactive,
+  hist.act.steps,
+  hist.act.Tactive,
+  hist.act.Tstill,
+  hist.mob.ar,
+  hist.mob.ar.f,
+  hist.mob.dist,
+  hist.mob.dist.f,
+  hist.mob.mcp,
+  hist.mob.mcp.f,
+  hist.mob.Nmove,
+  hist.mob.Nplace,
+  hist.mob.Tmove,
+  hist.mob.Tout
+)
+
 ```
 
 Now look at relation between data and ES
@@ -136,7 +153,24 @@ subplot(range.compare.Tmove, shareY=TRUE) %>% layout(title="Time moving")
 subplot(range.compare.Nplaces, shareY=TRUE) %>% layout(title="N places")
 subplot(range.compare.Nmoves, shareY=TRUE) %>% layout(title="N moves")
 
+subplot(range.compare.activeT, shareY=TRUE) %>% layout(title="Active Time")
+subplot(range.compare.activeB, shareY=TRUE) %>% layout(title="N active bouts")
+subplot(range.compare.still, shareY=TRUE) %>% layout(title="Still periods")
+subplot(range.compare.steps, shareY=TRUE) %>% layout(title="Steps")
 
+remove(
+  range.compare.ar,
+  range.compare.dist,
+  range.compare.mcp,
+  range.compare.Nmoves,
+  range.compare.Nplaces,
+  range.compare.Tmove,
+  range.compare.Tout,
+  range.compare.activeT,
+  range.compare.activeB,
+  range.compare.still,
+  range.compare.steps
+)
 
 # # For single participant
 # p.es.mob <- p.es %>% filter(question_id=="jrt_mobility")
@@ -182,7 +216,8 @@ Compare with activity scores as per other plots.
 
 ```{r scoring}
 
-subplot(met.scores, nrows=6) %>% layout(title="comparison with scores")
+subplot(mob.scores, nrows=6) %>% layout(title="comparison with scores")
+subplot(act.scores, nrows=6) %>% layout(title="comparison with scores")
 
 # tester<- metrics.mob %>%
 #   group_by(participant) %>%
