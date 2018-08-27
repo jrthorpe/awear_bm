@@ -275,8 +275,8 @@ get_metrics <- function(traj.summary, gps.traj) {
               AR.mean = mean(action.range),                  # mean action range
               dist.total = sum(displacements,na.rm=TRUE),    # total distance covered (stay to stay)
               dist.max = max(displacements,na.rm=TRUE),      # largest distance between stays
-              Tt.move = sum(durations[is.stay==0]/60),          # total time spent moving between stays
-              Tm.move = mean(durations[is.stay==0]/60),         # average duration of a move
+              Tt.move = sum(durations[is.stay==0]/60),          # total time spent moving between stays in hrs
+              Tm.move = mean(durations[is.stay==0]/60),         # average duration of a move in hours
               Tt.out = sum(durations[!is.home])/60)             # total time spent out of the home
   
   N.moves <- traj.summary %>% tally(loc.id==0) # number of moves

@@ -72,7 +72,7 @@ dist.cutoff <- 50000 # for filtering AR.max to not get holidays
 # load complete datasets
 source("./Rscripts/cases_data_load.R")
 
-source("./Rscripts/cases_plotter_A2.R")
+#source("./Rscripts/cases_plotter_A2.R")
 
 ```
 
@@ -240,3 +240,213 @@ Comparison with baseline data:
 
 * mobility zones (LSA)
 * activity: transport and still periods (GPAQ)
+
+```{r compare_assess}
+# put the analyses cut from last paper here.
+
+```
+
+### Comparison between perceived and objectively measured individual goal attainment
+
+Participant: P03JJ
+Goal: to maintain current schedule of activities, and to travel to them by bicycle (5 per week)
+
+```{r goal_p03}
+
+# import participant reported goal attainment
+
+
+# tests whether he rides bike 5 times per week (perhaps on the planned weekdays)
+
+
+
+# go into schedule-level detail...
+
+
+
+```
+
+Participant: P06SS
+Goal: walk longer daily (and train 3 times per week, need to look into the details for this)
+
+```{r goal_p06}
+
+# import participant reported goal attainment
+
+
+
+```
+
+Participant: P07MG
+Goal: to get out of the house every day
+
+```{r goal_p07}
+
+# import participant reported goal attainment
+p07.perceived <- c(1,0,0,1,0,-1,1,1)
+
+# measure from metrics/data
+p07.metrics.mob <- 
+  metrics.mob %>% filter(participant == "P07MG") %>%
+  #mutate(day = ifelse(day<8,day,day-4)) %>%
+  mutate(week = ((day-1) %/% 7)+1)
+
+
+p07.metrics.act <- 
+  metrics.act %>% filter(participant == "P07MG") %>%
+  mutate(day = p07.metrics.mob$day,
+         week = p07.metrics.mob$week)
+
+# plot_ly(metrics.mob.p07,
+#         x = ~dates,
+#         y = ~N.moves,
+#         color = ~as.factor(week),
+#         type = "scatter",
+#         mode = "markers+lines")
+
+
+# Tabulate results by week
+p07.tab.mob <- p07.metrics.mob %>% group_by(week) %>%
+  summarise( Ndays = n(),
+             move.days = sum(N.moves > 0),
+             T.move.ave = round(mean(Tt.move*60)),
+             date = max(dates)) %>%
+  mutate(SR.goal = c(p07.perceived,NA))
+
+p07.tab.act <- p07.metrics.act %>% group_by(week) %>%
+  summarise( Ndays = n(),
+             T.active.ave = round(mean(active.time)),
+             steps = round(mean(steps)))
+
+p07.weekly.results <- cbind(p07.tab.mob[1:8,], p07.tab.act[1:8,3:4]) %>% 
+  select(week, move.days,T.move.ave,T.active.ave,SR.goal)
+
+p07.weekly.results
+
+plot_ly(p07.weekly.results,
+        x = ~week,
+        y = ~SR.goal,
+        type = "scatter",
+        mode = "lines+markers") %>%
+  add_trace(y = ~move.days/7) %>%
+  add_trace(y = ~T.move.ave/60) %>%
+  add_trace(y = ~T.active.ave/60)
+
+remove(p07.metrics.mob, p07.metrics.act, p07.tab.act, p07.tab.mob, p07.weekly.results, p07.perceived)
+
+```
+
+Participant: P08UH
+Goal: to drive less and ride bike more, at least 4 days per week
+
+```{r goal_p08}
+# perceived goal attainment
+p08.perceived <- c(-1,-1,0,NA,-1,0,0,0)
+
+
+# get all recorded dates/days for participant
+p08.metrics <- metrics.mob %>% filter(participant == "P08UH") %>%
+  select(participant, dates, day) %>% 
+  mutate(day = day-7) %>% # to match dates of weekly calls
+  filter(day > 0)
+
+p08.bike <- act.pday %>% filter(participant == "P08UH", activity == "Bicycle")
+p08.vehicle <- act.pday %>% filter(participant == "P08UH", activity == "Vehicle")
+p08.trans <- merge(x = p08.bike, y = p08.vehicle, by=c("participant","dates"), all=TRUE, suffixes=c(".bike",".vehicle")); remove(p08.bike, p08.vehicle)
+
+p08.goals <- 
+  merge(p08.metrics, p08.trans, by=c("participant","dates"), all.x=TRUE) %>%
+  select(dates, day, total.time.bike, N.bike, total.time.vehicle, N.vehicle) %>%
+  mutate(week = ((day-1) %/% 7)+1)
+#remove(p08.metrics,p08.trans)
+
+p08.goals[is.na(p08.goals)] <- 0
+
+p08.weekly.results <- p08.goals %>% filter(week < 9) %>%
+  group_by(week) %>%
+  summarise(dates = max(dates),
+            Ndays = n(),
+            bike.days = sum(N.bike>0),
+            vehicle.days = sum(N.vehicle>0),
+            bike.time = sum(total.time.bike)/sum(N.bike>0),
+            vehicle.time = sum(total.time.vehicle)/sum(N.vehicle>0)) %>%
+  mutate(SR.goal = p08.perceived)
+
+
+```
+
+Participant: P10JL
+Goal: activity schedule
+
+```{r goal_p10}
+
+
+
+```
+
+Participant: P13NB
+Goal: get out once per day
+
+```{r goal_p13}
+
+# import participant reported goal attainment
+perceived <- c(0,1,0,1,0,0,0,0)
+
+
+# measure from metrics/data
+metrics.mob.p13 <-
+  metrics.mob %>% filter(participant == "P13NB") %>%
+  mutate(week = ((day-1) %/% 7)+1)
+ 
+metrics.act.p13 <-
+  metrics.act %>% filter(participant == "P13NB")
+
+metrics.p13 <- merge(metrics.mob.p13,
+                     metrics.act.p13,
+                     by=c("dates", "participant"),
+                     all=T)
+
+T.move.pfunc <- ecdf(metrics.p13$Tt.move)
+steps.pfunc <- ecdf(metrics.p13$steps)
+
+
+
+# Tabulate results by week
+weekly.results.p13 <- metrics.p13 %>% group_by(week) %>%
+  summarise( Ndays = n(),
+             move.days = sum(N.moves > 0),
+             T.move.ave = round(mean(Tt.move*60)),
+             T.active.ave = round(mean(active.time)),
+             steps = round(mean(steps)),
+             date = max(dates)) %>%
+  mutate(SR.goal = c(perceived,NA),
+         steps.prb = steps.pfunc(steps),
+         T.move.prb = T.move.pfunc(T.move.ave/60))
+
+weekly.results.p13[1:8,] %>% select(week, move.days,T.move.ave,T.move.prb,T.active.ave,steps,steps.prb,SR.goal)
+
+plot_ly(weekly.results.p13[1:8,],
+        x = ~week,
+        y = ~SR.goal,
+        type = "scatter",
+        mode = "lines+markers") %>%
+  add_trace(y = ~move.days/7, name = "days with >0 moves") %>%
+  add_trace(y = ~T.move.ave/60, name = "ave move time, hrs") %>%
+  add_trace(y = ~T.active.ave/60, name = "ave active time, hrs") %>%
+  add_trace(y = ~steps/10000, name = "steps in 10k")
+
+plot_ly(weekly.results.p13[1:8,],
+        x = ~week,
+        y = ~(SR.goal+2)/4,
+        type = "scatter",
+        mode = "lines+markers") %>%
+  add_trace(y = ~move.days/7, name = "days with >0 moves") %>%
+  add_trace(y = ~T.move.prb, name = "ave move time") %>%
+  add_trace(y = ~steps.prb, name = "steps")
+
+
+remove(metrics.p13, weekly.results.p13, T.move.pfunc, steps.pfunc, perceived)
+
+
+```
+

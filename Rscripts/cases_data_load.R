@@ -185,7 +185,7 @@ es <-
 # Remove all datasets not required for the analyses:
 remove(
   act.features,
-  act.pday,
+  #act.pday,
   act.trans.pday,
   active.features
   )
