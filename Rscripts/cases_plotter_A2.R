@@ -24,13 +24,6 @@ hist.act.Tstill <- list()
 
 # Comparing metrics ranges to ES answers: ----
 
-# create required datasets:
-es.mobility <- es %>% filter(question_id=="jrt_mobility" | question_id=="mobility_P03")
-mobility.compare <- merge(x=metrics.mob, y=es.mobility, by=c("participant", "dates"))
-
-es.activity <- es %>% filter(question_id=="jrt_activity" | question_id=="activity_P03")
-activity.compare <- merge(x=metrics.act, y=es.activity, by=c("participant", "dates"))
-
 range.compare.ar <- list()
 range.compare.dist <- list()
 range.compare.mcp <- list()
@@ -52,18 +45,21 @@ mob.scores <- list()
 act.scores.data <- list()
 act.scores <- list()
 
+mob.probs <- list()
+act.probs <- list()
+
 
 for(p in p.codes){
   
   # create basic plots with data for current participant
   p.hist.mob <- plot_ly(data = metrics.mob %>% filter(participant == p), 
-                    name = p, width = 1200, height = 300)
+                    name = p, width = 1200, height = 150)
   
   p.hist.mob.filt <- plot_ly(data = metrics.mob %>% filter(participant == p, AR.max < dist.cutoff), # action range limit of 50km
-                         name = p, width = 1200, height = 300)  
+                         name = p, width = 1200, height = 150)  
   
   p.hist.act <- plot_ly(data = metrics.act %>% filter(participant == p),
-                              name = p, width = 1200, height = 300)
+                              name = p, width = 1200, height = 150)
   
   # create each participant-metrics histogram
   hist.mob.ar[[p]] <- p.hist.mob %>% add_histogram(x = ~AR.max/1000)
@@ -90,17 +86,17 @@ for(p in p.codes){
   p.compare.mob <- plot_ly(data = mobility.compare %>% 
                          filter(participant == p, answer > 0) %>% 
                          group_by(answer),
-                       name = p, width = 1200, height = 300, opacity = 0.8)
+                       name = p, width = 1200, height = 150, opacity = 0.8)
   
   p.compare.mob.filt <- plot_ly(data = mobility.compare %>% 
                               filter(participant == p, answer > 0, AR.max < dist.cutoff) %>% 
                               group_by(answer),
-                       name = p, width = 1200, height = 300, opacity = 0.8)
+                       name = p, width = 1200, height = 150, opacity = 0.8)
   
   p.compare.act <- plot_ly(data = activity.compare %>% 
                               filter(participant == p, answer > 0) %>% 
                               group_by(answer),
-                            name = p, width = 1200, height = 300, opacity = 0.8)
+                            name = p, width = 1200, height = 150, opacity = 0.8)
   
   # create plots for comparing ES answers to ranges of each metric
   range.compare.ar[[p]] <- p.compare.mob.filt %>% add_markers(x = ~AR.max, 
@@ -277,9 +273,134 @@ for(p in p.codes){
 }
 
 
+for(p in p.codes){  
+  
+  #p <- "P10JL"
+  
+  # metrics
+  metrics.mob.p  <- metrics.mob %>% filter(participant == p, AR.max < dist.cutoff)
+  metrics.act.p <- metrics.act %>% filter(participant == p)
+  
+  # experience sampling answers
+  es.mobility.p <- es.mobility %>% filter(participant == p)
+  es.activity.p <- es.activity %>% filter(participant == p)
+  
+  # create probability functions
+  ecdf.AR <- ecdf(metrics.mob.p$AR.max)
+  ecdf.dist <- ecdf(metrics.mob.p$dist.total)
+  ecdf.mcp <-  ecdf(metrics.mob.p$mcp.area %>% as.numeric())
+  ecdf.Tmove  = ecdf(metrics.mob.p$Tt.move %>% as.numeric())
+  ecdf.Tout  = ecdf(metrics.mob.p$Tt.out %>% as.numeric())
+  ecdf.Nplaces  = ecdf(metrics.mob.p$N.places)
+  ecdf.Nmoves  = ecdf(metrics.mob.p$N.moves)
 
+  # mobility
+  mob.probs.p <- data.frame(
+    AR.probs = ecdf.AR(metrics.mob.p$AR.max),
+    dist.probs = ecdf.dist(metrics.mob.p$dist.total),
+    mcp.probs = ecdf.mcp(metrics.mob.p$mcp.area %>% as.numeric()),
+    Tmove.probs = ecdf.Tmove(metrics.mob.p$Tt.move %>% as.numeric()),
+    Tout.probs = ecdf.Tout(metrics.mob.p$Tt.out %>% as.numeric()),
+    Nplaces.probs = ecdf.Nplaces(metrics.mob.p$N.places),
+    Nmoves.probs = ecdf.Nmoves(metrics.mob.p$N.moves),
+    dates = metrics.mob.p$dates,
+    participant = p
+  )
+  
+  # include combination scores
+  mob.probs.p %<>% mutate(spatial = (AR.probs+mcp.probs)/2,
+                           temporal = (Tmove.probs+Tout.probs)/2,
+                           counts = (Nplaces.probs+Nmoves.probs)/2,
+                           combo = (AR.probs+mcp.probs+
+                                      Tmove.probs+Tout.probs+
+                                      Nplaces.probs+Nmoves.probs)/6)
 
+  mob.probs.dat <- merge(x=mob.probs.p, y=es.mobility.p, by=c("dates", "participant"))
 
+  # Acitivity
+  
+  # create functions:
+  ecdf.activeT = ecdf(metrics.act.p$active.time)
+  ecdf.activeB = ecdf(metrics.act.p$active.bouts)
+  ecdf.still = ecdf(metrics.act.p$still.time %>% as.numeric())
+  ecdf.steps = ecdf(metrics.act.p$steps)
+  
+  # convert to probabilities
+  act.probs.p <- data.frame(
+    activeT.probs = ecdf.activeT(metrics.act.p$active.time),
+    activeB.probs = ecdf.activeB(metrics.act.p$active.bouts),
+    still.probs = ecdf.still(metrics.act.p$still.time %>% as.numeric()),
+    steps.probs = ecdf.steps(metrics.act.p$steps),
+    dates = metrics.act.p$dates,
+    participant = p
+  )
+  
+  # include combination scores
+  act.probs.p %<>% mutate(combo = ((activeT.probs+
+                                       activeB.probs+
+                                       still.probs+
+                                       steps.probs)/4))
+
+  # merge with es answers and store in dataset
+  act.probs.dat <- merge(x=act.probs.p, y=es.activity.p, by=c("dates", "participant"))
+  
+  # exclude one random es answer right at start followed by long gap
+  if(p=="P03JJ"){
+    mob.probs.dat <- mob.probs.dat[-1,]
+    act.probs.dat <- act.probs.dat[-1,]
+  }
+  
+  
+  
+  # create individual plots:
+  anno_subtitle$text <- p  # anno_subtitle defined in stylesheet script
+
+  p.mob.probs <- plot_ly(data = mob.probs.dat,
+                          x=~dates,
+                          y=~(answer-1)/5,
+                          type = "scatter",
+                          mode = "lines",
+                          line = list(color="red", width=4),
+                          showlegend = ifelse(p=="P03JJ",TRUE,FALSE),
+                          width = 1200,
+                          height = 1200,
+                          name = "self-report")
+  p.mob.probs %<>%
+    # add_trace(y = ~AR.probs, name="AR", line = list(color=greys[3], width=2, dash = "dot")) %>%
+    # add_trace(y = ~mcp.probs, name="MCP", line = list(color=greys[4], width=2, dash = "dot")) %>%
+    # add_trace(y = ~Tmove.probs, name="move time", line = list(color=greys[5], width=2, dash = "dot")) %>%
+    # add_trace(y = ~Tout.probs, name="time out", line = list(color=greys[6], width=2, dash = "dot")) %>%
+    # add_trace(y = ~Nmoves.probs, name="N moves", line = list(color=greys[7], width=2, dash = "dot")) %>%
+    # add_trace(y = ~Nplaces.probs, name="N places", line = list(color=greys[2], width=2, dash = "dot")) %>%
+    add_trace(y = ~spatial, name="spatial", line = list(color=greys[3], width=2, dash = "dot")) %>%
+    add_trace(y = ~temporal, name="temporal", line = list(color=greys[5], width=2, dash = "dot")) %>%
+    add_trace(y = ~counts, name="counts", line = list(color=greys[7], width=2, dash = "dot")) %>%
+    add_trace(y = ~combo, name="combination", line = list(color="black", width=2)) %>%
+    layout(annotations = anno_subtitle,
+           margin = list(l = 50, r = 50, b = 50, t = 50, pad = 5))
+
+  p.act.probs <- plot_ly(data = act.probs.dat,
+                          x=~dates,
+                          y=~(answer-1)/5,
+                          type = "scatter",
+                          mode = "lines",
+                          line = list(color="red", width=4),
+                          showlegend = ifelse(p=="P03JJ",TRUE,FALSE),
+                          width = 1200,
+                          height = 1200,
+                          name = "self-report")
+  p.act.probs %<>%
+    add_trace(y = ~activeT.probs, name="active time", line = list(color=greys[3], width=2, dash = "dot")) %>%
+    add_trace(y = ~activeB.probs, name="active bouts", line = list(color=greys[4], width=2, dash = "dot")) %>%
+    add_trace(y = ~still.probs, name="still time", line = list(color=greys[5], width=2, dash = "dot")) %>%
+    add_trace(y = ~steps.probs, name="steps", line = list(color=greys[5], width=2, dash = "dot")) %>%
+    add_trace(y = ~combo, name="combined", line = list(color="black", width=2)) %>%
+    layout(annotations = anno_subtitle,
+           margin = list(l = 50, r = 50, b = 50, t = 50, pad = 5))
+  
+  mob.probs[[p]] <- p.mob.probs
+  act.probs[[p]] <- p.act.probs
+}
 
 
 

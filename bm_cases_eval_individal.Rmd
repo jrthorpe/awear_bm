@@ -3,15 +3,13 @@ title: "AWEAR Case studies analyses"
 author: "Julia Thorpe"
 date: "September 2018"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
   word_document: default
 always_allow_html: yes
 ---
 
-Some first results from visualising data for all participants.
-
-All of the plots below follow the same format: time along horizontal axis and dates up vertical axis, plotting the entire participation period for each participant. (Note: ignore date at start of all the time axes, which likely show a current or recent date).
+# Analysis A2: comparisong between participant perceptions and sensor-based measurement
 
 
 ```{r setup, include=FALSE}
@@ -47,12 +45,6 @@ source("./Rscripts/JRT_utils.R")
 
 ```
 
-Possibly merge all results from all participants into one dataset to make it easier to plot the various subsets. These should include a row per day per participant with the following columnns:
-
-* all mobility metrics
-* ES answers
-* metrics derived from acitivity bouts (e.g. still periods, use of bike/foot/vehicle as transport)
-* daily stepcount (watch and phone each own column)
 
 
 ```{r data_load, include=FALSE}
@@ -72,16 +64,23 @@ dist.cutoff <- 50000 # for filtering AR.max to not get holidays
 # load complete datasets
 source("./Rscripts/cases_data_load.R")
 
+# create required datasets:
+es.mobility <- es %>% filter(question_id=="jrt_mobility" | question_id=="mobility_P03")
+mobility.compare <- merge(x=metrics.mob, y=es.mobility, by=c("participant", "dates"))
+
+es.activity <- es %>% filter(question_id=="jrt_activity" | question_id=="activity_P03")
+activity.compare <- merge(x=metrics.act, y=es.activity, by=c("participant", "dates"))
+
 source("./Rscripts/cases_plotter_A2.R")
 
 ```
 
 
-Visualising the data as a first impression
+## Visualising the data as a first impression
 * Distributions for each of the metrics
 * Filter and repeat
 
-```{r echo=FALSE}
+```{r histograms, echo=FALSE}
 
 # MOBILITY
 n <- 1
@@ -131,16 +130,10 @@ remove(
 
 ```
 
-Now look at relation between data and ES
+## Relation between data and ES
+Show ranges of each variable against the answers
 
-* Show ranges of each variable against the answers (could have a plot per metrics including all participants as traces)
-
-TO ADD: ES activity answers and
-* step counts, watch/phone (whichever is higher) 
-* still periods 
-
-
-```{r es_metrics_spread}
+```{r es_metrics_spread, echo=FALSE}
 
 # mobility answers + metrics:
 subplot(range.compare.ar, shareY=TRUE) %>% layout(title="Action Range")
@@ -200,24 +193,22 @@ remove(
 
 ```
 
-Convert the metrics to scores and compare with ES answers directly, include:
-* Table showing which is most correlated (should end up demonstrating that a combo is best)
-* Spatial, Temporal and Counts (not sure about counts?!)
+Convert the metrics to scores and compare with ES answers directly, could include:
 
-Could make "distance", "temporal" and "count" scores and one total overall combo
+* Table showing which is most correlated (should end up demonstrating that a combination is best)
+* Spatial, Temporal and Counts (not converted to scores, different approach) + combination
+* Activity (bouts, time) and steps + combination
 
-TO ADD: convert activity features to scores, including:
-* step counts, watch/phone (whichever is higher) 
-* still periods 
+TO DO: replace scoring with edcf function (as in goal attainment)
 
-Compare with activity scores as per other plots.
-
-
-
-```{r scoring}
+```{r scoring, echo=FALSE, warning=FALSE}
 
 subplot(mob.scores, nrows=6) %>% layout(title="comparison with scores")
 subplot(act.scores, nrows=6) %>% layout(title="comparison with scores")
+
+
+subplot(mob.probs, nrows=6) %>% layout(title="comparison with probabilities - mobility")
+subplot(act.probs, nrows=6) %>% layout(title="comparison with probabilities - activity")
 
 # tester<- metrics.mob %>%
 #   group_by(participant) %>%
@@ -241,28 +232,120 @@ Comparison with baseline data:
 * mobility zones (LSA)
 * activity: transport and still periods (GPAQ)
 
-```{r compare_assess}
-# put the analyses cut from last paper here.
+```{r compare_assess, echo=FALSE}
+# analyses cut from last paper here (potentially)
 
 ```
 
-### Comparison between perceived and objectively measured individual goal attainment
+## Comparison between perceived and objectively measured individual goal attainment
 
-Participant: P03JJ
-Goal: to maintain current schedule of activities, and to travel to them by bicycle (5 per week)
+### Goal: To get out of the house every day 
 
-```{r goal_p03}
+Example: P07MG
+```{r goal_p07, echo=FALSE, warning=FALSE}
 
-# discarded
+# import participant reported goal attainment
+p07.perceived <- c(1,0,0,1,0,-1,1,1)
 
+# measure from metrics/data
+p07.metrics.mob <- 
+  metrics.mob %>% filter(participant == "P07MG") %>%
+  #mutate(day = ifelse(day<8,day,day-4)) %>%
+  mutate(week = ((day-1) %/% 7)+1)
+
+p07.metrics.act <- 
+  metrics.act %>% filter(participant == "P07MG") %>%
+  mutate(day = p07.metrics.mob$day,
+         week = p07.metrics.mob$week)
+
+# Tabulate results by week
+p07.tab.mob <- p07.metrics.mob %>% group_by(week) %>%
+  summarise( Ndays = n(),
+             move.days = sum(N.moves > 0),
+             T.move.ave = round(mean(Tt.move*60)),
+             date = max(dates)) %>%
+  mutate(SR.goal = c(p07.perceived,NA))
+
+p07.tab.act <- p07.metrics.act %>% group_by(week) %>%
+  summarise( Ndays = n(),
+             T.active.ave = round(mean(active.time)),
+             steps = round(mean(steps)))
+
+p07.weekly.results <- cbind(p07.tab.mob[1:8,], p07.tab.act[1:8,3:4]) %>% 
+  select(week, move.days,SR.goal)
+
+p07.weekly.results
+
+remove(p07.metrics.mob, p07.metrics.act, p07.tab.act, p07.tab.mob, p07.weekly.results, p07.perceived)
+
+```
+
+Example: P13NB
+```{r goal_p13, echo=FALSE, warning=FALSE}
+
+# import participant reported goal attainment
+p13.perceived <- c(0,1,0,1,0,0,0,0)
+
+# measure from metrics/data
+p13.metrics.mob <-
+  metrics.mob %>% filter(participant == "P13NB") %>%
+  mutate(week = ((day-1) %/% 7)+1)
+ 
+p13.metrics.act <-
+  metrics.act %>% filter(participant == "P13NB")
+
+p13.metrics <- merge(p13.metrics.mob,
+                     p13.metrics.act,
+                     by=c("dates", "participant"),
+                     all=T)
+
+T.move.pfunc <- ecdf(p13.metrics$Tt.move)
+steps.pfunc <- ecdf(p13.metrics$steps)
+
+# Tabulate results by week
+p13.weekly.results <- p13.metrics %>% group_by(week) %>%
+  summarise( Ndays = n(),
+             move.days = sum(N.moves > 0),
+             T.move.ave = round(mean(Tt.move*60)),
+             T.active.ave = round(mean(active.time)),
+             steps = round(mean(steps)),
+             date = max(dates)) %>%
+  mutate(SR.goal = c(p13.perceived,NA),
+         steps.prb = steps.pfunc(steps) %>% round(2),
+         T.move.prb = T.move.pfunc(T.move.ave/60) %>% round(2))
+
+p13.weekly.results[1:8,] %>% select(week, move.days,T.move.ave,T.move.prb,steps,steps.prb,SR.goal)
+
+plot_ly(p13.weekly.results[1:8,],
+        x = ~week,
+        y = ~SR.goal,
+        type = "scatter",
+        mode = "markers",
+        marker = list(size=12, color = "red"),
+        name = "Reported score",
+        width = 900,
+        height = 200) %>%
+  add_bars(y = ~SR.goal, width=0.1, showlegend = FALSE) %>%
+  add_trace(y = ~(T.move.prb-0.5)*2,
+            mode = "markers+lines",
+            marker = list(size=2, color =  greys[5]),
+            line = list(width = 2, color =  greys[5],dash = "dot"), 
+            name = "ave move time") %>%
+  add_trace(y = ~(steps.prb-0.5)*2,
+            mode = "markers+lines",
+            marker = list(size=2, color = greys[3]),
+            line = list(width = 2, color =  greys[3],dash = "dash"), 
+            name = "steps")
+
+remove(p13.metrics, p13.weekly.results, T.move.pfunc, steps.pfunc, p13.perceived)
 
 
 ```
 
-Participant: P06SS
-Goal: walk longer daily (and train 3 times per week, need to look into the details for this)
+### Goal: walk longer daily (more/less activity X)
 
-```{r goal_p06}
+Example: P06SS
+```{r goal_p06, echo=FALSE, warning=FALSE}
 
 # import participant reported goal attainment
 p06.perceived <- c(-1,0,0,1,NA,-1,NA,-1,-1,NA,-1,NA)
@@ -302,10 +385,9 @@ p06.metrics %<>% filter( day < 8 | day > 11 ) %>%
   mutate(day = c(1:n())) %>%
   mutate(week = ((day-1) %/% 7)+1)
 
+# Create probability functions
 T.foot.pfunc <- ecdf(p06.metrics$total.time)
 steps.pfunc <- ecdf(p06.metrics$steps)
-
-
 
 # Tabulate results by week
 p06.weekly.results <- p06.metrics %>% group_by(week) %>%
@@ -320,35 +402,16 @@ p06.weekly.results <- p06.metrics %>% group_by(week) %>%
 
 p06.weekly.results[1:11,] %>% select(week,walk.time.mean,steps,walk.Q,steps.Q,SR.goal)
 
-answer_bars <- data.frame(dates = p06.calldates,
-                          answer = p06.perceived,
-                          zero = 0) %>%
-  melt(id.vars = "dates")
-
-plot_ly(p06.metrics,
-        x = ~dates,
-        y = ~(T.foot.pfunc(total.time)-0.5)*2,
-        type = "scatter",
-        mode = "markers+lines",
-            marker = list(size=2, color = greys[3]),
-            line = list(width = 2, color =  greys[3],dash = "dash")) %>%
-  add_trace(y = ~(steps.pfunc(steps)-0.5)*2,
-            marker = list(size=2, color =  greys[5]),
-            line = list(width = 2, color =  greys[5],dash = "dot")) %>%
-  add_trace(data = answer_bars %>% arrange(dates) %>% group_by(dates),
-            x = ~dates,
-            y = ~value,
-            marker = list(size=10, color = "red"),
-            line = list(width = 6, color = "red",dash="none"))
-
-
+# Plot results
 plot_ly(p06.weekly.results,
         x = ~week,
         y = ~SR.goal,
         type = "scatter",
         mode = "markers",
         marker = list(size=12, color = "red"),
-        name = "Reported score") %>%
+        name = "Reported score",
+        width = 900,
+        height = 200) %>%
   add_bars(y = ~SR.goal, width=0.1, showlegend = FALSE) %>%
   add_trace(y = ~(steps.Q-0.5)*2,
             mode = "markers+lines",
@@ -361,77 +424,15 @@ plot_ly(p06.weekly.results,
             line = list(width = 2, color =  greys[3],dash = "dash"),
             name = "Walk time")
 
-# ,
-#         line = list(width = 6, color = "red",dash="none")
 
 ```
 
-Participant: P07MG
-Goal: to get out of the house every day
+Example: P08UH
+Goal to drive less and ride bike more (at least 4 days per week), but towars the start focused instead on walking or other activities. During a weekly call on the 17th April said he started biking that day.
 
-```{r goal_p07}
-
-# import participant reported goal attainment
-p07.perceived <- c(1,0,0,1,0,-1,1,1)
-
-# measure from metrics/data
-p07.metrics.mob <- 
-  metrics.mob %>% filter(participant == "P07MG") %>%
-  #mutate(day = ifelse(day<8,day,day-4)) %>%
-  mutate(week = ((day-1) %/% 7)+1)
-
-
-p07.metrics.act <- 
-  metrics.act %>% filter(participant == "P07MG") %>%
-  mutate(day = p07.metrics.mob$day,
-         week = p07.metrics.mob$week)
-
-# plot_ly(metrics.mob.p07,
-#         x = ~dates,
-#         y = ~N.moves,
-#         color = ~as.factor(week),
-#         type = "scatter",
-#         mode = "markers+lines")
-
-
-# Tabulate results by week
-p07.tab.mob <- p07.metrics.mob %>% group_by(week) %>%
-  summarise( Ndays = n(),
-             move.days = sum(N.moves > 0),
-             T.move.ave = round(mean(Tt.move*60)),
-             date = max(dates)) %>%
-  mutate(SR.goal = c(p07.perceived,NA))
-
-p07.tab.act <- p07.metrics.act %>% group_by(week) %>%
-  summarise( Ndays = n(),
-             T.active.ave = round(mean(active.time)),
-             steps = round(mean(steps)))
-
-p07.weekly.results <- cbind(p07.tab.mob[1:8,], p07.tab.act[1:8,3:4]) %>% 
-  select(week, move.days,T.move.ave,T.active.ave,SR.goal)
-
-p07.weekly.results
-
-plot_ly(p07.weekly.results,
-        x = ~week,
-        y = ~SR.goal,
-        type = "scatter",
-        mode = "lines+markers") %>%
-  add_trace(y = ~move.days/7) %>%
-  add_trace(y = ~T.move.ave/60) %>%
-  add_trace(y = ~T.active.ave/60)
-
-remove(p07.metrics.mob, p07.metrics.act, p07.tab.act, p07.tab.mob, p07.weekly.results, p07.perceived)
-
-```
-
-Participant: P08UH
-Goal: to drive less and ride bike more, at least 4 days per week
-
-```{r goal_p08}
+```{r goal_p08, echo=FALSE, warning=FALSE}
 # perceived goal attainment
 p08.perceived <- c(-1,-1,0,NA,-1,0,0,0)
-
 
 # get all recorded dates/days for participant
 p08.metrics <- metrics.mob %>% filter(participant == "P08UH") %>%
@@ -454,22 +455,24 @@ p08.goals[is.na(p08.goals)] <- 0
 p08.weekly.results <- p08.goals %>% filter(week < 9) %>%
   group_by(week) %>%
   summarise(dates = max(dates),
-            Ndays = n(),
+            Ndays = n(),      # just to check there are 7 days being measured in each study week
             bike.days = sum(N.bike>0),
             vehicle.days = sum(N.vehicle>0),
-            bike.time = sum(total.time.bike)/sum(N.bike>0),
-            vehicle.time = sum(total.time.vehicle)/sum(N.vehicle>0)) %>%
+            bike.time = (sum(total.time.bike)/sum(N.bike>0)) %>% round(2),
+            vehicle.time = (sum(total.time.vehicle)/sum(N.vehicle>0)) %>% round(2)) %>%
   mutate(SR.goal = p08.perceived)
 
-p08.weekly.results
-
+p08.weekly.results %>% select(week, bike.days, vehicle.days, bike.time, vehicle.time, SR.goal)
 
 ```
 
-Participant: P10JL
-Goal: activity schedule
 
-```{r goal_p10}
+### Goal: activity schedule
+
+Example: P10JL
+Could add annotations to the timeline with weekly call notes
+
+```{r goal_p10, echo=FALSE, warning=FALSE}
 
 # Monday-Friday 1 hour at the training place.
 
@@ -499,19 +502,84 @@ remove(proximity, training.loc)
 #         y = ~proximity)
 
 
-# Get dates and perceived goals;19-03-2018
-26-03-2018
-03-04-2018
-10-04-2018
-17-04-2018
-24-04-2018
-02-05-2018
-08-05-2018
-15-05-2018
-22-05-2018
-29-05-2018
+# Get dates and perceived goals
+p10.SR <- data.frame(
+  perceived = c(0,1,0,NA,NA,0,0,-1,1,0,0),
+  dates = as.Date(c("19-03-2018",
+                           "26-03-2018",
+                           "03-04-2018",
+                           "10-04-2018",
+                           "17-04-2018",
+                           "24-04-2018",
+                           "02-05-2018",
+                           "08-05-2018",
+                           "15-05-2018",
+                           "22-05-2018",
+                           "29-05-2018"),
+                         format = "%d-%m-%Y"),
+    notes = c("weather dependent",
+              " ",
+              "holidays, centre closed",
+              "Stopped using watch",
+              NA,
+              "All activities",
+              "All activities",
+              "Distruptions, social",
+              "Stepcount 18000 today",
+              "Long walk the 18th",
+              "Too warm / public holidays"))
 
+p10.goals <- merge(p10.training.days,
+                   p10.SR,
+                   by="dates",
+                   all= T) %>%
+  tail(83) %>% # to align with call dates
+  mutate(day = c(0,cumsum(diff(dates)%>%as.numeric()))+1) %>%
+  mutate(week = ((day-1) %/% 7)+1)
 
+plot_ly(data = p10.goals,
+        x = ~dates,
+        y = ~training.time/60,
+        type = "bar",
+        marker = list(color = "lightblue"),
+        width = 1500) %>%
+  add_text(data = p10.SR, 
+           x=~dates, 
+           y=~perceived,
+           text = ~notes,
+           inherit=FALSE,
+           textposition = "bottom centre",
+           textfont = list(color = "darkred", size = 12))
+           
+           # name = "test",
+           # inherit=FALSE,
+           # textposition = "top right", textfont = f3)
+
+# plot_ly(data = p10.goals,
+#         x = ~dates,
+#         y = ~training.time/60,
+#         type = "scatter",
+#         mode = "lines+markers") %>%
+#   add_trace(data = p10.goals %>% filter(!is.na(perceived)),
+#         x = ~dates,
+#         y = ~perceived,
+#         inherit = F,
+#         type = "scatter",
+#         mode = "markers") %>%
+#   add_trace(data = p10.goals %>% filter(!is.na(perceived)),
+#         x = ~dates,
+#         y = ~perceived,
+#         inherit = F,
+#         type = "bar")
+
+# summarise in a table
+p10.goal.results <- p10.goals %>% group_by(week) %>%
+  summarise(dates = max(dates),
+            training = sum(training > 0),
+            total.time = sum(training.time/60) %>% as.numeric() %>% round()) %>%
+  mutate(SR.goal = c(p10.SR$perceived,NA))
+
+p10.goal.results[c(1:2,6:11),]
 
 
 ```
@@ -519,66 +587,5 @@ remove(proximity, training.loc)
 Participant: P13NB
 Goal: get out once per day
 
-```{r goal_p13}
 
-# import participant reported goal attainment
-p13.perceived <- c(0,1,0,1,0,0,0,0)
-
-
-# measure from metrics/data
-p13.metrics.mob <-
-  metrics.mob %>% filter(participant == "P13NB") %>%
-  mutate(week = ((day-1) %/% 7)+1)
- 
-p13.metrics.act <-
-  metrics.act %>% filter(participant == "P13NB")
-
-p13.metrics <- merge(p13.metrics.mob,
-                     p13.metrics.act,
-                     by=c("dates", "participant"),
-                     all=T)
-
-T.move.pfunc <- ecdf(p13.metrics$Tt.move)
-steps.pfunc <- ecdf(p13.metrics$steps)
-
-
-
-# Tabulate results by week
-p13.weekly.results <- p13.metrics %>% group_by(week) %>%
-  summarise( Ndays = n(),
-             move.days = sum(N.moves > 0),
-             T.move.ave = round(mean(Tt.move*60)),
-             T.active.ave = round(mean(active.time)),
-             steps = round(mean(steps)),
-             date = max(dates)) %>%
-  mutate(SR.goal = c(p13.perceived,NA),
-         steps.prb = steps.pfunc(steps),
-         T.move.prb = T.move.pfunc(T.move.ave/60))
-
-p13.weekly.results[1:8,] %>% select(week, move.days,T.move.ave,T.move.prb,T.active.ave,steps,steps.prb,SR.goal)
-
-plot_ly(p13.weekly.results[1:8,],
-        x = ~week,
-        y = ~SR.goal,
-        type = "scatter",
-        mode = "lines+markers") %>%
-  add_trace(y = ~move.days/7, name = "days with >0 moves") %>%
-  add_trace(y = ~T.move.ave/60, name = "ave move time, hrs") %>%
-  add_trace(y = ~T.active.ave/60, name = "ave active time, hrs") %>%
-  add_trace(y = ~steps/10000, name = "steps in 10k")
-
-plot_ly(p13.weekly.results[1:8,],
-        x = ~week,
-        y = ~(SR.goal+2)/4,
-        type = "scatter",
-        mode = "lines+markers") %>%
-  add_trace(y = ~move.days/7, name = "days with >0 moves") %>%
-  add_trace(y = ~T.move.prb, name = "ave move time") %>%
-  add_trace(y = ~steps.prb, name = "steps")
-
-
-remove(p13.metrics, p13.weekly.results, T.move.pfunc, steps.pfunc, p13.perceived)
-
-
-```
 
