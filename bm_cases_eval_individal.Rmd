@@ -3,9 +3,9 @@ title: "AWEAR Case studies analyses"
 author: "Julia Thorpe"
 date: "September 2018"
 output:
-  pdf_document: default
   html_document: default
   word_document: default
+  pdf_document: default
 always_allow_html: yes
 ---
 
@@ -584,8 +584,6 @@ p10.goal.results[c(1:2,6:11),]
 
 ```
 
-Participant: P13NB
-Goal: get out once per day
 
 
 
