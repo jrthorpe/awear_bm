@@ -21,12 +21,12 @@ mz.list <- list(P03JJ = readRDS("./output_data/mobilityzones_P03JJ.Rds"), # from
 # remove(activity.assessments)
 # saveRDS(act.assessments,"./output_data/activity_assessments_post.Rds")
 act.assessments <- readRDS("./output_data/activity_assessments_post.Rds")  # from clinical assessments
-act.list <- list(P03JJ = readRDS("./output_data/activitymoves_P03JJ.Rds"), # from algorithm results
-                 P06SS = readRDS("./output_data/activitymoves_P06SS.Rds"),
-                 P07MG = readRDS("./output_data/activitymoves_P07MG.Rds"),
-                 P08UH = readRDS("./output_data/activitymoves_P08UH.Rds"),
-                 P10JL = readRDS("./output_data/activitymoves_P10JL.Rds"),
-                 P13NB = readRDS("./output_data/activitymoves_P13NB.Rds"))
+act.list <- list(P03JJ = readRDS("./output_data/activity_moves_pday_P03JJ.Rds"), # from algorithm results
+                 P06SS = readRDS("./output_data/activity_moves_pday_P06SS.Rds"),
+                 P07MG = readRDS("./output_data/activity_moves_pday_P07MG.Rds"),
+                 P08UH = readRDS("./output_data/activity_moves_pday_P08UH.Rds"),
+                 P10JL = readRDS("./output_data/activity_moves_pday_P10JL.Rds"),
+                 P13NB = readRDS("./output_data/activity_moves_pday_P13NB.Rds"))
 
 steps.list <- list(P03JJ = readRDS("./output_data/steps_P03JJ.Rds"), # from algorithm results
                    P06SS = readRDS("./output_data/steps_P06SS.Rds"),

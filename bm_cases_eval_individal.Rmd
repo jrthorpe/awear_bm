@@ -227,10 +227,8 @@ subplot(act.probs, nrows=6) %>% layout(title="comparison with probabilities - ac
 ```
 
 
-Comparison with baseline data:
-
-* mobility zones (LSA)
-* activity: transport and still periods (GPAQ)
+Comparison with baseline data: 
+(discarded - will instead use questionnaires as background information otherwise just crowds the results)
 
 ```{r compare_assess, echo=FALSE}
 # analyses cut from last paper here (potentially)
@@ -543,17 +541,32 @@ plot_ly(data = p10.goals,
         type = "bar",
         marker = list(color = "lightblue"),
         width = 1500) %>%
-  add_text(data = p10.SR, 
-           x=~dates, 
+  add_trace(y = ~perceived, marker = list(color = "black"), showlegend = FALSE) %>%
+  add_trace(y = ~perceived, type = "scatter", mode = "markers", marker = list(color = "black", size = 6, symbol="square"), showlegend = FALSE) %>%
+  add_text(data = p10.SR,
+           x=~dates,
            y=~perceived,
            text = ~notes,
            inherit=FALSE,
-           textposition = "bottom centre",
-           textfont = list(color = "darkred", size = 12))
-           
-           # name = "test",
-           # inherit=FALSE,
-           # textposition = "top right", textfont = f3)
+           textposition = ~ifelse(perceived<0,"bottom centre","top centre"),
+           textfont = list(color = "black", size = 12))
+
+# plot_ly(data = p10.goals,
+#         x = ~dates,
+#         y = ~perceived,
+#         type = "scatter",
+#         mode = "markers",
+#         marker = list(color = "black", size = 4),
+#         width = 1500) %>%
+#   add_bars(y = ~perceived, width = 0.01, showlegend = FALSE) %>%
+#   add_trace(y = ~perceived, type = "scatter", mode = "markers", marker = list(color = "black", size = 12), showlegend = FALSE) %>%
+#   add_text(data = p10.SR, 
+#            x=~dates, 
+#            y=~perceived,
+#            text = ~notes,
+#            inherit=FALSE,
+#            textposition = "bottom centre",
+#            textfont = list(color = "black", size = 12))
 
 # plot_ly(data = p10.goals,
 #         x = ~dates,
