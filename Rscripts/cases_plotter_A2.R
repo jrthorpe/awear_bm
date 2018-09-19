@@ -335,7 +335,7 @@ for(p in p.codes){
   act.probs.p <- data.frame(
     activeT.probs = ecdf.activeT(metrics.act.p$active.time),
     activeB.probs = ecdf.activeB(metrics.act.p$active.bouts),
-    still.probs = ecdf.still(metrics.act.p$still.time %>% as.numeric()),
+    still.probs = 1-ecdf.still(metrics.act.p$still.time %>% as.numeric()),
     steps.probs = ecdf.steps(metrics.act.p$steps),
     dates = metrics.act.p$dates,
     participant = p
