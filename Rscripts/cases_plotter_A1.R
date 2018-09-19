@@ -22,13 +22,24 @@ for(p in p.codes){
   
   p.screen %<>% filter(switch != 0)
   
+  anno_subtitle$text <- p  # anno_subtitle defined in stylesheet script
   screen.plots[[i]] <- plot_ly(p.screen %>% group_by(dates, on.event),
                                x = ~times,
                                y = ~dates,
                                type = "scatter",
                                mode = "lines",
-                               line = list(width = 6)) %>%
-    layout(title=p, titlefont = f1)
+                               line = list(width = 6),
+                               width = 1300,
+                               height = 300,
+                               name = p) %>%
+    layout(#title=p,
+           margin = list(l = 100, r = 100, b = 50, t = 50, pad = 2),
+           titlefont = f1,
+           xaxis = stdaxis,
+           yaxis = stdaxis,
+           annotations = anno_subtitle,
+           #legend = l,
+           showlegend = FALSE)
   
   
   # battery charging patterns:
@@ -66,21 +77,26 @@ for(p in p.codes){
                     measure.vars = c("T.start","T.end")) %>% 
     mutate(times = as.POSIXct(strftime(value, format="%H:%M:%S"), format="%H:%M:%S"),
            dist.group = cut(action.range,
-                            breaks = c(0, 100,  500,  1000,  2000, 5000, 10000, Inf),
-                            labels = c("<0.1km", "0.1-0.5km", "0.5-1km", "1-2km", "2-5km", "5-10km", ">10km"))) %>%
+                            breaks = c(0, 200,  500,  1000,  2000, 5000, 10000, Inf),
+                            labels = c("<0.2km", "0.2-0.5km", "0.5-1km", "1-2km", "2-5km", "5-10km", ">10km"))) %>%
     group_by(dates, traj.event)
   
-  mobility.plots[[i]] <- plot_ly(data = traj_melt,
+  anno_subtitle$text <- p  # anno_subtitle defined in stylesheet script
+  mobility.plots[[i]] <- plot_ly(data = traj_melt %>% filter(dates > min(traj_melt$dates) & dates < max(traj_melt$dates)), # filter is only necessary for P10
           x = ~times,
           y = ~dates,
           type = "scatter",
           mode = "lines",
           color = ~dist.group,
           colors = "YlGnBu",
-          line = list(width=4)) %>%
-    layout(xaxis = timeaxis,
-           title=p, titlefont = f1,
-           #margin = list(l = 50, r = 50, b = 80, t = 50, pad = 4),
+          line = list(width=4),
+          showlegend = ifelse(p=="P10JL", TRUE, FALSE)
+          #width = 900
+          ) %>%
+    layout(#xaxis = timeaxis,
+           #title=p, titlefont = f1,
+           annotations = anno_subtitle,
+           margin = list(l = 50, r = 50, b = 50, t = 50, pad = 4),
            legend = l)
   
   p.mcp <- mcp %>% filter(participant == p) %>% ungroup()
@@ -127,14 +143,16 @@ for(p in p.codes){
           type = "scatter",
           mode = "lines",
           line = list(color = "grey", width = 2),
-          name = "Still") %>%
+          name = "Still",
+          height = 400,
+          width = 500) %>%
     add_trace(data = bout_melt %>% filter(activity == "Foot"),
               x = ~times,
               y = ~dates,
               type = "scatter",
               mode = "lines",
               opacity = 0.5,
-              line = list(color = "red", width = 20),
+              line = list(color = "red", width = 10),
               name = "On Foot") %>%
     add_trace(data = bout_melt %>% filter(activity == "Bicycle"),
               x = ~times,
@@ -142,7 +160,7 @@ for(p in p.codes){
               type = "scatter",
               mode = "lines",
               opacity = 0.5,
-              line = list(color = "blue", width = 20),
+              line = list(color = "blue", width = 10),
               name = "Bicycle") %>%
     add_trace(data = bout_melt %>% filter(activity == "Vehicle"),
               x = ~times,
@@ -150,12 +168,16 @@ for(p in p.codes){
               type = "scatter",
               mode = "lines",
               opacity = 0.5,
-              line = list(color = "green", width = 20),
+              line = list(color = "green", width = 10),
               name = "Vehicle") %>%
-    layout(xaxis = timeaxis,
-           title=p, titlefont = f1,
-           #margin = list(l = 50, r = 50, b = 80, t = 50, pad = 4),
-           legend = l)
+    layout(
+      #xaxis = timeaxis,
+           title=p, titlefont = f3,
+           yaxis = list(title = " "),
+           xaxis = list(title = " "),
+           margin = list(l = 50, r = 50, b = 50, t = 50, pad = 4)
+           #legend = l
+           )
   
   
   

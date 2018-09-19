@@ -199,16 +199,21 @@ Convert the metrics to scores and compare with ES answers directly, could includ
 * Spatial, Temporal and Counts (not converted to scores, different approach) + combination
 * Activity (bouts, time) and steps + combination
 
-TO DO: replace scoring with edcf function (as in goal attainment)
-
 ```{r scoring, echo=FALSE, warning=FALSE}
+# 
+# #subplot(mob.scores, nrows=6) %>% layout(title="comparison with scores")
+# mob.scores[[1]]
+# #subplot(act.scores, nrows=6) %>% layout(title="comparison with scores")
+# act.scores[[3]]
 
-subplot(mob.scores, nrows=6) %>% layout(title="comparison with scores")
-subplot(act.scores, nrows=6) %>% layout(title="comparison with scores")
+#subplot(mob.probs, nrows=6) %>% layout(title="comparison with probabilities - mobility")
+mob.probs[[1]]
+#subplot(act.probs, nrows=6) %>% layout(title="comparison with probabilities - activity")
+act.probs[[3]]
 
+# subplot(mob.scores[[1]],mob.probs[[1]])
+# subplot(act.scores[[3]],act.probs[[3]])
 
-subplot(mob.probs, nrows=6) %>% layout(title="comparison with probabilities - mobility")
-subplot(act.probs, nrows=6) %>% layout(title="comparison with probabilities - activity")
 
 # tester<- metrics.mob %>%
 #   group_by(participant) %>%
@@ -320,7 +325,7 @@ plot_ly(p13.weekly.results[1:8,],
         type = "scatter",
         mode = "markers",
         marker = list(size=12, color = "red"),
-        name = "Reported score",
+        name = "Goal attainmnet",
         width = 900,
         height = 200) %>%
   add_bars(y = ~SR.goal, width=0.1, showlegend = FALSE) %>%
@@ -333,7 +338,8 @@ plot_ly(p13.weekly.results[1:8,],
             mode = "markers+lines",
             marker = list(size=2, color = greys[3]),
             line = list(width = 2, color =  greys[3],dash = "dash"), 
-            name = "steps")
+            name = "steps") %>%
+  layout(yaxis = list(title = "Goal rating | Adjusted P"))
 
 remove(p13.metrics, p13.weekly.results, T.move.pfunc, steps.pfunc, p13.perceived)
 
@@ -407,7 +413,7 @@ plot_ly(p06.weekly.results,
         type = "scatter",
         mode = "markers",
         marker = list(size=12, color = "red"),
-        name = "Reported score",
+        name = "Goal attainment",
         width = 900,
         height = 200) %>%
   add_bars(y = ~SR.goal, width=0.1, showlegend = FALSE) %>%
@@ -420,7 +426,9 @@ plot_ly(p06.weekly.results,
             mode = "markers+lines",
             marker = list(size=2, color = greys[3]),
             line = list(width = 2, color =  greys[3],dash = "dash"),
-            name = "Walk time")
+            name = "Walk time") %>%
+  layout(yaxis = list(title = "Goal rating | Adjusted P"),
+         xaxis = list(dtick = 1))
 
 
 ```
@@ -456,11 +464,12 @@ p08.weekly.results <- p08.goals %>% filter(week < 9) %>%
             Ndays = n(),      # just to check there are 7 days being measured in each study week
             bike.days = sum(N.bike>0),
             vehicle.days = sum(N.vehicle>0),
-            bike.time = (sum(total.time.bike)/sum(N.bike>0)) %>% round(2),
-            vehicle.time = (sum(total.time.vehicle)/sum(N.vehicle>0)) %>% round(2)) %>%
+            bike.time.alt = (sum(total.time.bike)/sum(N.bike>0)) %>% round(2),
+            bike.time = (sum(total.time.bike)) %>% round(),
+            vehicle.time = (sum(total.time.vehicle)) %>% round()) %>%
   mutate(SR.goal = p08.perceived)
 
-p08.weekly.results %>% select(week, bike.days, vehicle.days, bike.time, vehicle.time, SR.goal)
+p08.weekly.results %>% select(week, dates, bike.days, vehicle.days, bike.time, bike.time.alt, vehicle.time, SR.goal)
 
 ```
 

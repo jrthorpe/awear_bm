@@ -41,7 +41,7 @@ anno_subtitle <- list(
   yanchor = "bottom",
   xanchor = "center",
   align = "center",
-  font = f3,
+  font = f2,
   x = 0.5,
   y = 1,
   showarrow = FALSE)
@@ -53,7 +53,7 @@ timeaxis <- list(
   autotick = FALSE,
   ticks = "outside",
   #tick0 = 0,
-  dtick = 86400000/48, #86400000 corresponds to 1 day
+  dtick = 86400000/12, #86400000 corresponds to 1 day
   ticklen = 5,
   tickwidth = 2#,
   #range = c(2,5)#,

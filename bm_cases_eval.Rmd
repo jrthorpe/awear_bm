@@ -83,11 +83,15 @@ Plots showing participants interaction with the phone, including time the screen
 
 
 Screen-on duration plots:
-```{r A1_use_screen, eval=FALSE, include=FALSE}
+```{r A1_use_screen, echo=FALSE}
 
 
 # screen on-off lines (line covering durations that screen is on)
-htmltools::tagList(screen.plots)
+htmltools::tagList(screen.plots[3:6])
+subplot(screen.plots[[3]],screen.plots[[4]],screen.plots[[6]],
+        margin = 0.03, 
+        widths = c(0.30,0.33,0.30))
+
 ```
 
 
@@ -111,6 +115,9 @@ Activity bouts
 # All activity bouts over study period
 htmltools::tagList(activity.plots)
 
+
+activity.plots[[2]]
+
 # All steps over study period
 htmltools::tagList(steps.plots)
 
@@ -121,6 +128,15 @@ Mobility: plots showing trajectories (stays and moves) along time axis with colo
 ```{r A1_features_mob, echo=FALSE}
 # Distance from home
 htmltools::tagList(mobility.plots)
+
+
+subplot(mobility.plots[[4]],mobility.plots[[5]],
+        margin = 0.04)
+
+#margin = 0.03, 
+#widths = c(0.30,0.33,0.30)
+
+
 htmltools::tagList(mcp.plots)
 
 plot_ly() %>%
@@ -146,10 +162,59 @@ Describe adherence in terms of how many recording days and es answers there are 
 
 ```{r adherence}
 
+# traj & act to get data record days
+
+traj %>% group_by(participant) %>%
+  summarise(n_distinct(dates))
+
+stepsdaily %>% group_by(participant) %>%
+  summarise(n_distinct(dates))
+
+Ndata <- act.pday %>% group_by(participant) %>%
+  summarise(Nact=n_distinct(dates))
+
+watch <- stepsdaily %>% filter(device=="watch") %>% group_by(participant) %>%
+  summarise(Nwatch = n_distinct(dates))
+
+adherence.es.m <- es %>% filter(question_id=="jrt_mobility" | question_id=="mobility_P03") %>% group_by(participant) %>%
+  summarise(n_distinct(dates))
+
+adherence.es.a <- es %>% filter(question_id=="jrt_activity" | question_id=="activity_P03") %>% group_by(participant) %>%
+  summarise(n_distinct(dates))
+
+adherence.es <- 
+  es %>% filter(question_id=="jrt_mobility" | question_id=="mobility_P03" | question_id=="jrt_activity" | question_id=="activity_P03") %>% 
+  group_by(participant, dates) %>% summarise(Nq=n_distinct(question_id))
+
+adherence.es %<>% mutate(A = ifelse(Nq>1,1,0.5))
+ad.es <- adherence.es %>% summarise(Qdays = sum(A))
 
 
-es.mobility <- es %>% filter(question_id=="jrt_mobility" | question_id=="mobility_P03")
-es.activity <- es %>% filter(question_id=="jrt_activity" | question_id=="activity_P03")
+
+Ndata %<>% mutate(N = Nact + c(-1,-1,-1,-1,0,0),
+                  watch = c(57,4,10,8,0,2),
+                  SR = ad.es$Qdays) %>%
+  mutate(watch.rate = round(100*watch/N),
+         SR.rate = round(100*SR/N))
+
+# # Calculate study duration based on data in the "participants" list in users.R file:
+# p3 <- participants$P03JJ
+# p3$d.stop-p3$d.start
+#
+# p6 <- participants$P06SS
+# p6$d.stop-p6$d.start
+# 
+# p7 <- participants$P07MG
+# p7$d.stop-p7$d.start
+# 
+# p8 <- participants$P08UH
+# p8$d.stop-p8$d.start
+# 
+# p10 <- participants$P10JL
+# p10$d.stop-p10$d.start
+# 
+# p13 <- participants$P13NB
+# p13$d.stop-p13$d.start
 
 es.adherence.mob <- merge(
   metrics.mob %>% group_by(participant) %>% summarise(data.records=n()),
