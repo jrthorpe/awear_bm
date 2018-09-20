@@ -4,7 +4,8 @@
 # p %>% layout(autosize = F, height = 500, margin = list(l=50, r=50, b=100, t=100, pad=4))
 
 # colours
-colourset <- brewer.pal(9, "Set1")
+colourset <- brewer.pal(9, "Greys")
+colourspect <- brewer.pal(9, "Spectral")
 colours.compare <- brewer.pal(3, "Set2")
 greys <- brewer.pal(9, "Greys")
 

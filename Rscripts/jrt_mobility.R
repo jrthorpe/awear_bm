@@ -245,10 +245,12 @@ summarise_trajectories <- function(gps.traj, dist.threshold) {
               is.stay = median(is.stay), loc.id = mean(loc.id),
               clat = ifelse(is.stay, mean(lat), NA), clon = ifelse(is.stay, mean(lon), NA),    # stays centroids
               action.range = max(homedist,na.rm=TRUE), # distance from home
+              point.dists = sum(displacements), # sum of distances between points
               c.dist = ifelse(is.stay, mean(homedist), NA) # distance between home and stay centroids
     ) %>%
     mutate(T.end = c(T.start[-1],T.end[length(T.end)])) %>%
     mutate(durations = difftime(T.end,T.start, units = "mins")) %>%
+    mutate(go.speed = point.dists/(as.numeric(durations))) %>%
     mutate(is.home = ifelse(is.stay==1 & c.dist<dist.threshold, TRUE, FALSE))
   
   # get displacements between stays
@@ -273,7 +275,9 @@ get_metrics <- function(traj.summary, gps.traj) {
   metrics.results <- traj.summary %>% 
     summarise(AR.max = max(action.range),                    # maximum action range
               AR.mean = mean(action.range),                  # mean action range
-              dist.total = sum(displacements,na.rm=TRUE),    # total distance covered (stay to stay)
+              #dist.total = sum(displacements,na.rm=TRUE),    # total distance covered (stay to stay)
+              dist.total = sum(point.dists[is.stay==0],na.rm=TRUE),    # total distance covered (point to point)
+              dist.foot = sum(point.dists[is.stay==0 & go.speed < 120],na.rm=TRUE),    # total distance covered for moves slower than 300m/minute (5m/s)
               dist.max = max(displacements,na.rm=TRUE),      # largest distance between stays
               Tt.move = sum(durations[is.stay==0]/60),          # total time spent moving between stays in hrs
               Tm.move = mean(durations[is.stay==0]/60),         # average duration of a move in hours

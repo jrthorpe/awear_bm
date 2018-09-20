@@ -124,7 +124,7 @@ saveRDS(p.es, paste0("./output_data/es_", p, ".Rds"))
 
 for(p in p.codes){
   
-#p <- "P10JL"
+#p <- "P07MG"
   
   P <- participants[[p]]
   list2env(P, .GlobalEnv); remove(P)
@@ -134,7 +134,11 @@ for(p in p.codes){
 # get data
 gps.log <- datasets.all$location %>% 
   filter(accuracy<=loc.accuracy) %>% # get rid of data points with low accuracy
-  select(lat, lon, timestamp, intervals.alt, dates, times)
+  select(lat, lon, timestamp, intervals.alt, dates, times) 
+
+# get distances between points
+gps.log %<>% mutate(displacements = c(0, distGeo(gps.log %>% select(lon,lat),
+                               a=6378137, f=1/298.257223563)))
 
 # get trajectories and metrics
 source("./Rscripts/mod_traj.R")
@@ -169,11 +173,11 @@ mob.zones <- mobility_zones(traj.summary)
 # saveRDS(p.metrics,paste0("./output_data/metrics_",p,".Rds"))
 # 
 # saveRDS(mob.zones,paste0("./output_data/mobilityzones_",p,".Rds"))
-# 
-# p.metrics <- mob.metrics %>%
-#   mutate(day=c(1:nrow(mob.metrics)), participant = p)
-# saveRDS(p.metrics,paste0("./output_data/metrics_",p,".Rds"))
-# 
+
+p.metrics <- mob.metrics %>%
+  mutate(day=c(1:nrow(mob.metrics)), participant = p)
+saveRDS(p.metrics,paste0("./output_data/metrics_",p,".Rds"))
+
 # # p.mcp.points <- do(gps.log %>% group_by(dates), get_mcp_points(.)) %>%
 # #   mutate(participant = p)
 # # saveRDS(p.mcp.points,paste0("./output_data/mcp_",p,".Rds"))
@@ -182,7 +186,7 @@ mob.zones <- mobility_zones(traj.summary)
 
 
 # clear environment
-remove(loc.accuracy, dT, dD, time.threshold.stay, time.threshold.go, dist.threshold, Qd)
+#remove(loc.accuracy, dT, dD, time.threshold.stay, time.threshold.go, dist.threshold, Qd)
 ```
 
 ### Steps

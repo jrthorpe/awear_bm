@@ -87,6 +87,7 @@ n <- 1
 # Spatial
 subplot(hist.mob.ar, nrows=n) %>% layout(title="Action range")
 subplot(hist.mob.dist, nrows=n) %>% layout(title="Distance covered")
+subplot(hist.mob.distfoot, nrows=n) %>% layout(title="Distance covered on foot")
 subplot(hist.mob.mcp, nrows=n) %>% layout(title="Minimum convex polygon")
 
 # Spatial - Filtered
@@ -137,7 +138,8 @@ Show ranges of each variable against the answers
 
 # mobility answers + metrics:
 subplot(range.compare.ar, shareY=TRUE) %>% layout(title="Action Range")
-subplot(range.compare.dist, shareY=TRUE) %>% layout(title="Distance covered")
+subplot(range.compare.dist, shareY=TRUE) %>% layout(title="Distance covered in moves")
+subplot(range.compare.distfoot, shareY=TRUE) %>% layout(title="Distance covered on foot")
 subplot(range.compare.mcp, shareY=TRUE) %>% layout(title="MCP")
 
 subplot(range.compare.Tout, shareY=TRUE) %>% layout(title="Time out of home")
@@ -205,14 +207,29 @@ Convert the metrics to scores and compare with ES answers directly, could includ
 # mob.scores[[1]]
 # #subplot(act.scores, nrows=6) %>% layout(title="comparison with scores")
 # act.scores[[3]]
+# 
+# subplot(mob.probs, nrows=6) %>% layout(title="comparison with probabilities - mobility")
+# mob.probs[[1]]
+# subplot(act.probs, nrows=6) %>% layout(title="comparison with probabilities - activity")
+# act.probs[[3]]
 
-#subplot(mob.probs, nrows=6) %>% layout(title="comparison with probabilities - mobility")
 mob.probs[[1]]
-#subplot(act.probs, nrows=6) %>% layout(title="comparison with probabilities - activity")
-act.probs[[3]]
+mob.probs[[2]]
+mob.probs[[3]]
+mob.probs[[4]]
+mob.probs[[5]]
+mob.probs[[6]]
+
 
 # subplot(mob.scores[[1]],mob.probs[[1]])
 # subplot(act.scores[[3]],act.probs[[3]])
+
+act.probs[[1]]
+act.probs[[2]]
+act.probs[[3]]
+act.probs[[4]]
+act.probs[[5]]
+act.probs[[6]]
 
 
 # tester<- metrics.mob %>%
