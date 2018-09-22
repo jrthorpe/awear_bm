@@ -3,11 +3,15 @@
 # To set size manually:
 # p %>% layout(autosize = F, height = 500, margin = list(l=50, r=50, b=100, t=100, pad=4))
 
+p.nums <- data.frame(P03JJ="1",P06SS="2",P07MG="3",P08UH="4",P10JL="5",P13NB="6")
+
 # colours
-colourset <- brewer.pal(9, "Greys")
+colourset <- brewer.pal(9, "Set1")
 colourspect <- brewer.pal(9, "Spectral")
 colours.compare <- brewer.pal(3, "Set2")
 greys <- brewer.pal(9, "Greys")
+greens <- brewer.pal(9, "Greens")
+blues <- brewer.pal(9, "Blues")
 
 # fonts
 f1 <- list(

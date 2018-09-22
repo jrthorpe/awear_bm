@@ -52,7 +52,7 @@ source("./Rscripts/JRT_utils.R")
 
 p.codes <- c("P03JJ","P06SS","P07MG","P08UH","P10JL","P13NB") # case studies
 
-dist.cutoff <- 50000 # for filtering AR.max to not get holidays 
+dist.cutoff <- 100000 # for filtering AR.max to not get holidays 
 
 # # select participant for analysis
 # p <- "P10JL"
@@ -202,12 +202,7 @@ Convert the metrics to scores and compare with ES answers directly, could includ
 * Activity (bouts, time) and steps + combination
 
 ```{r scoring, echo=FALSE, warning=FALSE}
-# 
-# #subplot(mob.scores, nrows=6) %>% layout(title="comparison with scores")
-# mob.scores[[1]]
-# #subplot(act.scores, nrows=6) %>% layout(title="comparison with scores")
-# act.scores[[3]]
-# 
+
 # subplot(mob.probs, nrows=6) %>% layout(title="comparison with probabilities - mobility")
 # mob.probs[[1]]
 # subplot(act.probs, nrows=6) %>% layout(title="comparison with probabilities - activity")
@@ -230,6 +225,10 @@ act.probs[[3]]
 act.probs[[4]]
 act.probs[[5]]
 act.probs[[6]]
+
+
+
+subplot(mob.probs[[1]],act.probs[[1]],nrows=2)
 
 
 # tester<- metrics.mob %>%
@@ -344,19 +343,19 @@ plot_ly(p13.weekly.results[1:8,],
         marker = list(size=12, color = "red"),
         name = "Goal attainmnet",
         width = 900,
-        height = 200) %>%
+        height = 210) %>%
   add_bars(y = ~SR.goal, width=0.1, showlegend = FALSE) %>%
   add_trace(y = ~(T.move.prb-0.5)*2,
             mode = "markers+lines",
             marker = list(size=2, color =  greys[5]),
             line = list(width = 2, color =  greys[5],dash = "dot"), 
-            name = "ave move time") %>%
+            name = "Average time moving") %>%
   add_trace(y = ~(steps.prb-0.5)*2,
             mode = "markers+lines",
             marker = list(size=2, color = greys[3]),
             line = list(width = 2, color =  greys[3],dash = "dash"), 
-            name = "steps") %>%
-  layout(yaxis = list(title = "Goal rating | Adjusted P"))
+            name = "Steps") %>%
+  layout(yaxis = list(title = "Goal rating | Probability-0.5"))
 
 remove(p13.metrics, p13.weekly.results, T.move.pfunc, steps.pfunc, p13.perceived)
 
@@ -432,7 +431,7 @@ plot_ly(p06.weekly.results,
         marker = list(size=12, color = "red"),
         name = "Goal attainment",
         width = 900,
-        height = 200) %>%
+        height = 210) %>%
   add_bars(y = ~SR.goal, width=0.1, showlegend = FALSE) %>%
   add_trace(y = ~(steps.Q-0.5)*2,
             mode = "markers+lines",
@@ -444,7 +443,7 @@ plot_ly(p06.weekly.results,
             marker = list(size=2, color = greys[3]),
             line = list(width = 2, color =  greys[3],dash = "dash"),
             name = "Walk time") %>%
-  layout(yaxis = list(title = "Goal rating | Adjusted P"),
+  layout(yaxis = list(title = "Goal rating | Probability-0.5"),
          xaxis = list(dtick = 1))
 
 

@@ -47,7 +47,7 @@ library("readxl") # For reading in pilot data
 #source("./Rscripts/jrt_mobility.R")
 #source("./Rscripts/jrt_steps.R")
 #source("./Rscripts/jrt_activity.R")
-#source("./Rscripts/users.R")
+source("./Rscripts/users.R")
 source("./Rscripts/stylesheet.R")
 
 # Select participant
@@ -92,6 +92,8 @@ subplot(screen.plots[[3]],screen.plots[[4]],screen.plots[[6]],
         margin = 0.03, 
         widths = c(0.30,0.33,0.30))
 
+subplot(screen.plots[[3]],screen.plots[[4]],screen.plots[[6]],
+        margin = 0.03)
 ```
 
 
@@ -131,7 +133,7 @@ htmltools::tagList(mobility.plots)
 
 
 subplot(mobility.plots[[4]],mobility.plots[[5]],
-        margin = 0.04)
+        margin = 0.05)
 
 #margin = 0.03, 
 #widths = c(0.30,0.33,0.30)
@@ -161,6 +163,19 @@ plot_ly() %>%
 Describe adherence in terms of how many recording days and es answers there are for the number of days participation
 
 ```{r adherence}
+test.p03 <- traj %>% filter(participant == "P03JJ") %>% distinct(dates)
+sum(diff(test.p03$dates)>1)
+test.p06 <- traj %>% filter(participant == "P06SS") %>% distinct(dates)
+sum(diff(test.p06$dates)>1)
+test.p07 <- traj %>% filter(participant == "P07MG") %>% distinct(dates)
+sum(diff(test.p07$dates)>1)
+test.p08 <- traj %>% filter(participant == "P08UH") %>% distinct(dates)
+sum(diff(test.p08$dates)>1)
+test.p10 <- traj %>% filter(participant == "P10JL") %>% distinct(dates)
+sum(diff(test.p10$dates)>1)
+test.p13 <- traj %>% filter(participant == "P13NB") %>% distinct(dates)
+sum(diff(test.p13$dates)>1)
+
 
 # traj & act to get data record days
 
@@ -189,8 +204,6 @@ adherence.es <-
 adherence.es %<>% mutate(A = ifelse(Nq>1,1,0.5))
 ad.es <- adherence.es %>% summarise(Qdays = sum(A))
 
-
-
 Ndata %<>% mutate(N = Nact + c(-1,-1,-1,-1,0,0),
                   watch = c(57,4,10,8,0,2),
                   SR = ad.es$Qdays) %>%
@@ -198,23 +211,23 @@ Ndata %<>% mutate(N = Nact + c(-1,-1,-1,-1,0,0),
          SR.rate = round(100*SR/N))
 
 # # Calculate study duration based on data in the "participants" list in users.R file:
-# p3 <- participants$P03JJ
-# p3$d.stop-p3$d.start
-#
-# p6 <- participants$P06SS
-# p6$d.stop-p6$d.start
-# 
-# p7 <- participants$P07MG
-# p7$d.stop-p7$d.start
-# 
-# p8 <- participants$P08UH
-# p8$d.stop-p8$d.start
-# 
-# p10 <- participants$P10JL
-# p10$d.stop-p10$d.start
-# 
-# p13 <- participants$P13NB
-# p13$d.stop-p13$d.start
+p3 <- participants$P03JJ
+p3$d.stop-p3$d.start
+
+p6 <- participants$P06SS
+p6$d.stop-p6$d.start
+
+p7 <- participants$P07MG
+p7$d.stop-p7$d.start
+
+p8 <- participants$P08UH
+p8$d.stop-p8$d.start
+
+p10 <- participants$P10JL
+p10$d.stop-p10$d.start
+
+p13 <- participants$P13NB
+p13$d.stop-p13$d.start
 
 es.adherence.mob <- merge(
   metrics.mob %>% group_by(participant) %>% summarise(data.records=n()),

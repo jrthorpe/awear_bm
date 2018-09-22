@@ -154,7 +154,7 @@ for(p in p.codes){
   # paste("hello",p.nums[[p]])
   
   # metrics
-  metrics.mob.p  <- metrics.mob %>% filter(participant == p, AR.max < dist.cutoff)
+  metrics.mob.p  <- metrics.mob %>% filter(participant == p) #, dist.total < dist.cutoff
   metrics.act.p <- metrics.act %>% filter(participant == p)
   
   # experience sampling answers
@@ -186,12 +186,9 @@ for(p in p.codes){
   )
   
   # include combination scores
-  mob.probs.p %<>% mutate(spatial = (AR.probs+mcp.probs+dist.probs)/3,
-                           temporal = (Tmove.probs+Tout.probs)/2,
-                           counts = (Nplaces.probs+Nmoves.probs)/2,
-                           combo = (AR.probs+mcp.probs+dist.probs+
-                                      Tmove.probs+Tout.probs+
-                                      Nplaces.probs+Nmoves.probs)/7)
+  mob.probs.p %<>% mutate(combo = (mcp.probs+
+                                   Tmove.probs+
+                                   Nplaces.probs)/3)
 
   mob.probs.dat <- merge(x=mob.probs.p, y=es.mobility.p, by=c("dates", "participant"))
 
@@ -207,7 +204,7 @@ for(p in p.codes){
   act.probs.p <- data.frame(
     activeT.probs = ecdf.activeT(metrics.act.p$active.time),
     activeB.probs = ecdf.activeB(metrics.act.p$active.bouts),
-    still.probs = 1-ecdf.still(metrics.act.p$still.time %>% as.numeric()),
+    still.probs = ecdf.still(metrics.act.p$still.time %>% as.numeric()),
     steps.probs = ecdf.steps(metrics.act.p$steps),
     dates = metrics.act.p$dates,
     participant = p
@@ -216,8 +213,7 @@ for(p in p.codes){
   # include combination scores
   act.probs.p %<>% mutate(combo = ((activeT.probs+
                                        activeB.probs+
-                                       still.probs+
-                                       steps.probs)/4))
+                                       steps.probs)/3))
   
   act.probs.p <-  merge(x=act.probs.p, 
                          y=mob.probs.p %>% select(dates,distfoot.probs), 
@@ -243,57 +239,55 @@ for(p in p.codes){
                           y=~combo,
                           type = "scatter",
                           mode = "lines+markers",
-                          line = list(color="black", width=4),
-                          marker = list(color="black", size=4),
+                          line = list(color=blues[9], width=4),
+                          marker = list(color=blues[9], size=4),
                           #showlegend = ifelse(p=="P03JJ",TRUE,FALSE),
-                          width = 1000,
+                          width = 1300,
                           height = 350,
                           name = "Combined")
   p.mob.probs %<>%
-    add_trace(y = ~AR.probs, name="Action range",marker = list(color=greys[3], size=2), line = list(color=greys[3], width=2, dash = "dot")) %>%
-    add_trace(y = ~dist.probs, name="Distance",marker = list(color=greys[4], size=2), line = list(color=greys[4], width=2, dash = "dot")) %>%
-    add_trace(y = ~mcp.probs, name="MCP",marker = list(color=greys[5], size=2), line = list(color=greys[5], width=3, dash = "dot")) %>%
-    add_trace(y = ~Tmove.probs, name="Move time",marker = list(color=greys[6], size=2), line = list(color=greys[6], width=2, dash = "dot")) %>%
-    add_trace(y = ~Tout.probs, name="Time out",marker = list(color=greys[7], size=2), line = list(color=greys[7], width=2, dash = "dot")) %>%
-    add_trace(y = ~Nmoves.probs, name="N moves",marker = list(color=greys[8], size=2), line = list(color=greys[8], width=2, dash = "dot")) %>%
-    add_trace(y = ~Nplaces.probs, name="N places",marker = list(color=greys[9], size=2), line = list(color=greys[9], width=2, dash = "dot")) %>%
-    # add_trace(y = ~spatial, name="spatial",marker = list(color=greys[3], size=2),  line = list(color=greys[3], width=2, dash = "dot")) %>%
-    # add_trace(y = ~temporal, name="temporal",marker = list(color=greys[5], size=2),  line = list(color=greys[5], width=2, dash = "dot")) %>%
-    # add_trace(y = ~counts, name="counts",marker = list(color=greys[7], size=2),  line = list(color=greys[7], width=2, dash = "dot")) %>%
-    add_trace(y = ~(answer-1)/4, name="self-report",marker = list(color="red", size=10),  line = list(color="red", width=4)) %>%
+    add_trace(y = ~mcp.probs, name="MCP",
+              marker = list(color=blues[3], size=2), line = list(color=blues[3], width=3, dash = "dot")) %>%
+    add_trace(y = ~Tmove.probs, name="Move time",
+              marker = list(color=blues[5], size=2), line = list(color=blues[5], width=2, dash = "dot")) %>%
+    add_trace(y = ~Nplaces.probs, name="N places",
+              marker = list(color=blues[7], size=2), line = list(color=blues[7], width=2, dash = "dot")) %>%
+    add_trace(y = ~(answer-1)/4, name="self-report",
+              marker = list(color="red", size=10),  line = list(color="red", width=4)) %>%
     layout(annotations = anno_subtitle,
            xaxis = list(title = "Date"),
-           yaxis = list(title = "Probability | Score"),
-           margin = list(l = 50, r = 50, b = 50, t = 50, pad = 5))
+           yaxis = list(title = "Probability | Score",
+                        dtick = 0.25),
+           margin = list(l = 50, r = 50, b = 50, t = 50, pad = 5),
+           legend = l)
 
   p.act.probs <- plot_ly(data = act.probs.dat,
-                          x=~dates,
-                          y=~(answer-1)/4,
-                          type = "scatter",
-                          mode = "lines+markers",
-                          line = list(color="red", width=4),
-                          marker = list(color="red", size=10),
-                          #showlegend = ifelse(p=="P03JJ",TRUE,FALSE),
-                          width = 1000,
-                          height = 350,
-                          name = "self-report")
+                         x=~dates,
+                         y = ~combo, name="Combined",
+                         type = "scatter",
+                         mode = "lines+markers",
+                         marker = list(color=greens[9], size=4), 
+                         line = list(color=greens[9], width=4),
+                         #showlegend = ifelse(p=="P03JJ",TRUE,FALSE),
+                         width = 1300,
+                         height = 350)
   p.act.probs %<>%
-    add_trace(y = ~distfoot.probs, name="dist foot",
-              marker = list(color=greys[2], size=2), line = list(color=greys[2], width=2, dash = "dot")) %>%
-    add_trace(y = ~activeT.probs, name="active time",
-              marker = list(color=greys[3], size=2), line = list(color=greys[3], width=2, dash = "dot")) %>%
-    add_trace(y = ~activeB.probs, name="active bouts",
-              marker = list(color=greys[4], size=2), line = list(color=greys[4], width=2, dash = "dot")) %>%
-    add_trace(y = ~still.probs, name="still time",
-              marker = list(color=greys[5], size=2), line = list(color=greys[5], width=2, dash = "dot")) %>%
-    add_trace(y = ~steps.probs, name="steps",
-              marker = list(color=greys[6], size=2), line = list(color=greys[6], width=2, dash = "dot")) %>%
-    add_trace(y = ~combo, name="combined",
-              marker = list(color="black", size=2), line = list(color="black", width=4)) %>%
+    # add_trace(y = ~distfoot.probs, name="dist foot",
+    #           marker = list(color="gold", size=2), line = list(color="gold", width=2, dash = "dot")) %>%
+    add_trace(y = ~activeT.probs, name="Active time",
+              marker = list(color=greens[3], size=2), line = list(color=greens[3], width=2, dash = "dot")) %>%
+    add_trace(y = ~activeB.probs, name="Active bouts",
+              marker = list(color=greens[5], size=2), line = list(color=greens[5], width=2, dash = "dot")) %>%
+    add_trace(y = ~steps.probs, name="Steps",
+              marker = list(color=greens[7], size=2), line = list(color=greens[7], width=2, dash = "dot")) %>%
+    add_trace(y=~(answer-1)/4,name = "Self-report",
+              line = list(color="red", width=4),marker = list(color="red", size=10)) %>%
     layout(annotations = anno_subtitle,
            xaxis = list(title = "Date"),
-           yaxis = list(title = "Probability | Score"),
-           margin = list(l = 50, r = 50, b = 50, t = 50, pad = 5))
+           yaxis = list(title = "Probability | Score",
+                        dtick = 0.25),
+           margin = list(l = 50, r = 50, b = 50, t = 50, pad = 5),
+           legend = l)
   
   mob.probs[[p]] <- p.mob.probs
   act.probs[[p]] <- p.act.probs
@@ -322,6 +316,39 @@ plot_ly(p7mob,
   add_trace(y=~dist.total) %>%
   add_trace(data=p7act, y = ~steps)
 
+
+distplot <- plot_ly(p7mob,
+                    x=~dates,
+                    y=~dist.total,
+                    type = "scatter",
+                    mode = "lines+markers",
+                    name = "Distance covered") %>%
+  add_trace(y=~dist.foot, name = "Distance - slow") %>%
+  add_trace(y=~AR.max, name = "Action range") 
+
+timeplot <- plot_ly(p7mob,
+                    x=~dates,
+                    y=~Tt.move,
+                    type = "scatter",
+                    mode = "lines+markers",
+                    name = "Time moving")%>%
+  add_trace(y=~Tt.out, name = "Time out of home")
+
+nplot <- plot_ly(p7mob,
+                 x=~dates,
+                 y=~N.places,
+                 type = "scatter",
+                 mode = "lines+markers",
+                 name = "Places visited")%>%
+  add_trace(y=~N.moves, name = "Moves")
+subplot(distplot,timeplot,nplot, nrows = 3)
+
+plot_ly(p7mob,
+        x=~dates,
+        y=~mcp.area,
+        type = "scatter",
+        mode = "lines+markers",
+        name = "Distance covered")
 
 # # Looking at correlations between ES answers and data.
 # plot_ly(activity.compare,
@@ -381,6 +408,7 @@ plot_ly(p7mob,
 # 
 # }
 # subplot(tester)
+
 
 
 

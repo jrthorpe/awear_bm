@@ -162,7 +162,8 @@ stepsdaily <-
     readRDS("./output_data/steptotals_P10JL.Rds"),
     readRDS("./output_data/steptotals_P13NB.Rds")
   ) %>% ungroup() %>%
-  mutate(steps = pmax(total.phone, total.watch, na.rm = TRUE))
+  mutate(steps = total.phone)
+  #mutate(steps = pmax(total.phone, total.watch, na.rm = TRUE))
 stepsdaily %<>% mutate(device = ifelse(total.phone==steps,"phone","watch"))
 
 # merge the steps and activity features into one set:

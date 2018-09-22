@@ -22,14 +22,15 @@ for(p in p.codes){
   
   p.screen %<>% filter(switch != 0)
   
-  anno_subtitle$text <- p  # anno_subtitle defined in stylesheet script
+  #anno_subtitle$text <- p  # anno_subtitle defined in stylesheet script
+  anno_subtitle$text <- paste("Participant",p.nums[[p]])  # anno_subtitle defined in stylesheet script
   screen.plots[[i]] <- plot_ly(p.screen %>% group_by(dates, on.event),
                                x = ~times,
                                y = ~dates,
                                type = "scatter",
                                mode = "lines",
                                line = list(width = 6),
-                               width = 1300,
+                               width = 1500,
                                height = 300,
                                name = p) %>%
     layout(#title=p,
@@ -53,7 +54,7 @@ for(p in p.codes){
           color = ~level) %>%
     layout(xaxis =list(range = c(min(p.battery$times),max(p.battery$times))),
            yaxis = list(range = c(min(p.battery$dates),max(p.battery$dates))),
-           title=p, titlefont = f1)
+           title=paste("Participant",p.nums[[p]]), titlefont = f1)
   
   
   battery.plots.B[[i]] <- plot_ly(data=p.battery %>% filter(plugged==1),
@@ -68,7 +69,7 @@ for(p in p.codes){
               type = "scatter",
               mode = "markers",
               name = "unplugged") %>%
-    layout(title=p, titlefont = f1)
+    layout(title=paste("Participant",p.nums[[p]]), titlefont = f1)
   
   # traj plots
   p.traj <- traj %>% filter(participant == p)
@@ -81,7 +82,8 @@ for(p in p.codes){
                             labels = c("<0.2km", "0.2-0.5km", "0.5-1km", "1-2km", "2-5km", "5-10km", ">10km"))) %>%
     group_by(dates, traj.event)
   
-  anno_subtitle$text <- p  # anno_subtitle defined in stylesheet script
+  #anno_subtitle$text <- p  # anno_subtitle defined in stylesheet script
+  anno_subtitle$text <- paste("Participant",p.nums[[p]])  # anno_subtitle defined in stylesheet script
   mobility.plots[[i]] <- plot_ly(data = traj_melt %>% filter(dates > min(traj_melt$dates) & dates < max(traj_melt$dates)), # filter is only necessary for P10
           x = ~times,
           y = ~dates,
@@ -91,7 +93,7 @@ for(p in p.codes){
           colors = "YlGnBu",
           line = list(width=4),
           showlegend = ifelse(p=="P10JL", TRUE, FALSE)
-          #width = 900
+          #width = 800
           ) %>%
     layout(#xaxis = timeaxis,
            #title=p, titlefont = f1,
@@ -143,9 +145,10 @@ for(p in p.codes){
           type = "scatter",
           mode = "lines",
           line = list(color = "grey", width = 2),
-          name = "Still",
-          height = 400,
-          width = 500) %>%
+          name = "Still"
+          #height = 400,
+          #width = 500
+          ) %>%
     add_trace(data = bout_melt %>% filter(activity == "Foot"),
               x = ~times,
               y = ~dates,
@@ -172,7 +175,7 @@ for(p in p.codes){
               name = "Vehicle") %>%
     layout(
       #xaxis = timeaxis,
-           title=p, titlefont = f3,
+           title=paste("Participant",p.nums[[p]]), titlefont = f3,
            yaxis = list(title = " "),
            xaxis = list(title = " "),
            margin = list(l = 50, r = 50, b = 50, t = 50, pad = 4)
@@ -191,7 +194,7 @@ for(p in p.codes){
                               colors = colourset[1:2],
                               type = "scatter",
                               mode = "markers+lines") %>%
-    layout(title=p)
+    layout(title=paste("Participant",p.nums[[p]]))
   
   # Replaced step count signals with daily steps to be more visually comprehendible and less data (was slowing everything down)
   # p.steps <- stepcounters %>% filter(participant == p)

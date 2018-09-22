@@ -48,34 +48,33 @@ participants <- list(
   P03JJ = list(
     userid = "e9f44eb5-8962-4894-83c6-783025c6eaea",
     d.start = as.POSIXct("2018-01-30"),
-    d.stop = as.POSIXct("2018-05-09")),
+    d.stop = as.POSIXct("2018-05-08")),
   
   P06SS = list(
     userid = "f9f24838-c844-42d4-8343-b20ebdd220f3",
     d.start = as.POSIXct("2018-03-16"),
-    d.stop = as.POSIXct("2018-06-07")),
+    d.stop = as.POSIXct("2018-06-06")),
   
   P07MG = list(
     userid = "4fbfddd0-a346-41c8-be8d-f8804b5068d3",
     d.start = as.POSIXct("2018-03-17"),
-    d.stop = as.POSIXct("2018-05-17")),
+    d.stop = as.POSIXct("2018-05-16")),
   
   P08UH = list(
     userid = "a85f299e-7a09-4ba7-bc19-8a200c2686c2",
     d.start = as.POSIXct("2018-03-06"), 
-    d.stop = as.POSIXct("2018-05-18")),
+    d.stop = as.POSIXct("2018-05-17")),
   
   P10JL = list(
     userid = "d05fa984-8d3b-4405-b417-211d1a3f50d6",
     d.start = as.POSIXct("2018-03-09"), 
-    d.stop = as.POSIXct("2018-06-05")),
+    d.stop = as.POSIXct("2018-06-04")),
   
   P13NB = list(
     userid = "75cc5240-7805-4550-aeae-873df9984710",
     d.start = as.POSIXct("2018-04-17"), 
-    d.stop = as.POSIXct("2018-06-14"))
+    d.stop = as.POSIXct("2018-06-13"))
 )
-
 
 
 
