@@ -355,7 +355,7 @@ plot_ly(p13.weekly.results[1:8,],
             marker = list(size=2, color = greys[3]),
             line = list(width = 2, color =  greys[3],dash = "dash"), 
             name = "Steps") %>%
-  layout(yaxis = list(title = "Goal rating | Probability-0.5"))
+  layout(yaxis = list(title = "Goal rating | Percentile-0.5"))
 
 remove(p13.metrics, p13.weekly.results, T.move.pfunc, steps.pfunc, p13.perceived)
 
@@ -443,7 +443,7 @@ plot_ly(p06.weekly.results,
             marker = list(size=2, color = greys[3]),
             line = list(width = 2, color =  greys[3],dash = "dash"),
             name = "Walk time") %>%
-  layout(yaxis = list(title = "Goal rating | Probability-0.5"),
+  layout(yaxis = list(title = "Goal rating | Percentile-0.5"),
          xaxis = list(dtick = 1))
 
 

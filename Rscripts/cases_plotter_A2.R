@@ -256,7 +256,7 @@ for(p in p.codes){
               marker = list(color="red", size=10),  line = list(color="red", width=4)) %>%
     layout(annotations = anno_subtitle,
            xaxis = list(title = "Date"),
-           yaxis = list(title = "Probability | Score",
+           yaxis = list(title = "Percentile | Score",
                         dtick = 0.25),
            margin = list(l = 50, r = 50, b = 50, t = 50, pad = 5),
            legend = l)
@@ -284,7 +284,7 @@ for(p in p.codes){
               line = list(color="red", width=4),marker = list(color="red", size=10)) %>%
     layout(annotations = anno_subtitle,
            xaxis = list(title = "Date"),
-           yaxis = list(title = "Probability | Score",
+           yaxis = list(title = "Percentile | Score",
                         dtick = 0.25),
            margin = list(l = 50, r = 50, b = 50, t = 50, pad = 5),
            legend = l)
