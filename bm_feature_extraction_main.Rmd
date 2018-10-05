@@ -1,17 +1,20 @@
 ---
-title: "AWEAR Behavioural Monitoring Setup"
+title: "Engineering systems design in healthcare - Behavioural feature extraction"
 author: "Julia Thorpe"
-date: "25 jul 2018"
+institution: "Engineering Systems Division, DTU Management"
+date: "October 2018"
 output: html_document
 ---
 
-## Setup: load packages, custom functions and data
+This work is conducted as part of the PhD project "Engineering Systems Design in Healthcare" at the Technical University of Denmark (DTU) in collaboration with Rigshospitalet-Glostrup. The project investigates the use of smart mobile and wearable technology for support and monitoring in dementia rehabilitation. The code below is used to extract a set of mobility features from location data and activity features from recognised activity and step count data.
+
+
+## Setup
+
+Loads required packages and custom functions
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-
-# For solving package install problem: https://stackoverflow.com/questions/5700505/windows-7-update-packages-problem-unable-to-move-temporary-installation
-# trace(utils:::unpackPkgZip, edit=TRUE) > line 140 (line 142 in R 3.4.4) > Sys.sleep(0.5) > Sys.sleep(2)
 
 # Load packages and functions.
 library(data.table)
@@ -27,13 +30,13 @@ library(maps)
 library(mapproj)
 library(sp)
 library(caTools)
-library(geosphere) # added in v3 of data checker
-library(mapview) # added in v1 of analysis framework
-library(tidyr) # added for function "complete" in assessments section
+library(geosphere) 
+library(mapview) 
+library(tidyr) 
 library(htmltools)
 library(RColorBrewer)
 #library(processx) # for saving static plotly graphics - NIU 
-library("readxl") # For reading in pilot data
+library("readxl") # for reading in pilot data
 
 # For DBSCAN clustering
 library(fpc)
@@ -51,99 +54,102 @@ source("./Rscripts/stylesheet.R")
 ```
 
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+Select participants to include and set input variables for the feature extraction algorithms:
 
 ```{r Define variables}
 
-#, eval=FALSE, include=FALSE
-
 # Select participant
-#p.codes <- "P03JJ" # single participant
-p.codes <- c("P03JJ","P06SS","P07MG","P08UH","P10JL","P13NB") # case studies
-#p.codes <- c("daisy","violet","agapantha","anthurium","nasturtium") # pilot #
+p.codes <- c("P03JJ", "P06SS", "P07MG", "P08UH", "P10JL", "P13NB") # case studies
+#p.codes <- c("daisy","violet","agapantha","anthurium","nasturtium") # pilot
 
 # Mobility:
-loc.accuracy <- 25 # threshold for accuracy of location points in meters
-dT <- 5  # delta T, time window in minutes
-dD <- 100 # delta D, diagonal distance boundary in meters
+loc.accuracy <- 25  # threshold for accuracy of location points in meters
+dT <- 5             # delta T, time window in minutes
+dD <- 100           # delta D, diagonal distance boundary in meters
 time.threshold.stay <- 10 # minimum duration of a stay, in minutes
-time.threshold.go <- 5 # cut-off for filtering out "go" events to/from same location, in minutes
-dist.threshold <- 50 # distance in meters within which two centriods belong to same stay location
-Qd <- .99 # quantile of distances to include in the MC polygon
-#doi <- as.POSIXct("2018-01-30") # day of interest (use when not d.start)  
+time.threshold.go <- 5    # cut-off for filtering out "go" events to/from same location, in minutes
+dist.threshold <- 50      # distance in meters within which two centriods belong to same stay location
+Qd <- .99                 # quantile of distances to include in the MC polygon
+#doi <- as.POSIXct("2018-01-30") # day of interest (use when not d.start)
 
 # Steps:
-win.size <- 15 # window size in minutes for...
+win.size <- 15 # window size in minutes
 
 # Activity:
-acts <- c("Still", "Foot", "Vehicle", "Bicycle")
+acts <- c("Still", "Foot", "Vehicle", "Bicycle") # specify activities of interest
 
 
 ```
 
-## Feature extraction
 
-Get the data that can be used directly without extracting any features (battery, screen)
+Save device data that used for other purposes than extracting behavioural features (battery, screen, mobile self-reports).
 
 ```{r direct_save, eval=FALSE, include=FALSE}
 
 for(p in p.codes){
+  
+  # unpack participant data
   P <- participants[[p]]
-  list2env(P, .GlobalEnv); remove(P)
-  d.study <- as.numeric(round(difftime(d.stop,d.start,units="days")))
-  datasets.all <- readRDS(paste0("./output_data/datasets_", p, ".Rds"))
-
-# battery
-p.battery <- datasets.all$battery %>%
+  list2env(P, .GlobalEnv)
+  remove(P)
+  d.study <-
+  as.numeric(round(difftime(d.stop, d.start, units = "days")))
+  datasets.all <-
+  readRDS(paste0("./output_data/datasets_", p, ".Rds"))
+  
+  # battery
+  p.battery <- datasets.all$battery %>%
   select(timestamp, dates, times, plugged, status, level) %>%
   mutate(participant = p)
-saveRDS(p.battery, paste0("./output_data/battery_", p, ".Rds"))
-
-# screen
-p.screen <- datasets.all$screen %>%
+  #saveRDS(p.battery, paste0("./output_data/battery_", p, ".Rds"))
+  
+  # screen
+  p.screen <- datasets.all$screen %>%
   select(timestamp, dates, times, screen_on) %>%
   mutate(participant = p)
-saveRDS(p.screen, paste0("./output_data/screen_", p, ".Rds"))
-
-# experience sampling
-p.es <- datasets.all$experience_sampling %>%
+  #saveRDS(p.screen, paste0("./output_data/screen_", p, ".Rds"))
+  
+  # experience sampling
+  p.es <- datasets.all$experience_sampling %>%
   select(timestamp, dates, times, question_id, answer) %>%
   mutate(participant = p)
-saveRDS(p.es, paste0("./output_data/es_", p, ".Rds"))
+  #saveRDS(p.es, paste0("./output_data/es_", p, ".Rds"))
 
 }
 
 ```
 
+## Feature extraction
 
 ### Mobility Features
+Location data is used to extract mobility features. Inputs include a GPS log file (dataframe) with the following columns: 
+*timestamp
+*
 
 ```{r MOBILITY}
 
 for(p in p.codes){
   
-#p <- "P07MG"
-  
+  # unpack participant data
   P <- participants[[p]]
   list2env(P, .GlobalEnv); remove(P)
-  d.study <- as.numeric(round(difftime(d.stop,d.start,units="days")))
-  datasets.all <- readRDS(paste0("./output_data/datasets_",p,".Rds"))
-
-# get data
-gps.log <- datasets.all$location %>% 
-  filter(accuracy<=loc.accuracy) %>% # get rid of data points with low accuracy
-  select(lat, lon, timestamp, intervals.alt, dates, times) 
-
-# get distances between points
-gps.log %<>% mutate(displacements = c(0, distGeo(gps.log %>% select(lon,lat),
-                               a=6378137, f=1/298.257223563)))
-
-# get trajectories and metrics
-source("./Rscripts/mod_traj.R")
-mob.metrics <- get_metrics(traj.summary, gps.traj)
-mob.zones <- mobility_zones(traj.summary)
+  d.study <-  as.numeric(round(difftime(d.stop, d.start, units = "days"))) # participation period
+  datasets.all <-  readRDS(paste0("./output_data/datasets_", p, ".Rds"))
+  
+  # get location data
+  gps.log <- datasets.all$location %>%
+  filter(accuracy <= loc.accuracy) %>% # filter low accuracy GPS readings
+  select(lat, lon, timestamp, intervals.alt, dates, times)
+  
+  # get distances between points
+  gps.log %<>% mutate(displacements = 
+                        c(0, distGeo(gps.log %>% select(lon, lat),
+                                     a = 6378137, f = 1 / 298.257223563)))
+  
+  # get trajectories and metrics
+  source("./Rscripts/mod_traj.R")
+  mob.metrics <- get_metrics(traj.summary, gps.traj)
+  mob.zones <- mobility_zones(traj.summary)
 
 # #  save results
 # 

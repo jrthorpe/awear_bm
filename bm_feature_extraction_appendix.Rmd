@@ -1,0 +1,248 @@
+---
+title: "Engineering systems design in healthcare - Behavioural feature extraction"
+author: "Julia Thorpe"
+institution: "Engineering Systems Division, DTU Management"
+date: "October 2018"
+output: html_document
+---
+
+This work is conducted as part of the PhD project "Engineering Systems Design in Healthcare" at the Technical University of Denmark (DTU) in collaboration with Rigshospitalet-Glostrup. The project investigates the use of smart mobile and wearable technology for support and monitoring in dementia rehabilitation. The code below is used to extract a set of mobility features from location data and activity features from recognised activity and step count data.
+
+
+## Setup
+
+Loads required packages and custom functions
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Load packages and functions.
+library(data.table)
+library(dtplyr)
+library(dplyr)
+library(magrittr)
+library(lubridate)
+library(ggplot2)
+library(reshape2)
+library(maptools)
+library(plotly)
+library(maps)
+library(mapproj)
+library(sp)
+library(caTools)
+library(geosphere) 
+library(mapview) 
+library(tidyr) 
+library(htmltools)
+library(RColorBrewer)
+#library(processx) # for saving static plotly graphics - NIU 
+library("readxl") # for reading in pilot data
+
+# For DBSCAN clustering
+library(fpc)
+library(dbscan)
+library(factoextra)
+
+# Load custom functions:
+source("./Rscripts/jrt_utils.R")
+source("./Rscripts/jrt_mobility.R")
+source("./Rscripts/jrt_steps.R")
+source("./Rscripts/jrt_activity.R")
+source("./Rscripts/users.R")
+source("./Rscripts/stylesheet.R")
+
+```
+
+
+Select participants to include and set input variables for the feature extraction algorithms:
+
+```{r Define variables}
+
+# Select participant
+p.codes <- c("P03JJ", "P06SS", "P07MG", "P08UH", "P10JL", "P13NB") # case studies
+#p.codes <- c("daisy","violet","agapantha","anthurium","nasturtium") # pilot
+
+# Set input variables:
+
+# location / mobility
+loc.accuracy <- 25  # threshold for accuracy of location points in meters
+dT <- 5             # delta T, time window in minutes (stay detection)
+dD <- 100           # delta D, diagonal distance boundary in meters (stay detection)
+time.threshold.stay <- 10 # minimum duration of a stay, in minutes
+time.threshold.go <- 5    # cut-off for filtering out "go" events to/from same location, in minutes
+dist.threshold <- 50      # distance in meters within which two centriods belong to same stay location
+Qd <- .99                 # quantile of distances to include in the minimum convex polygon
+#doi <- as.POSIXct("2018-01-30") # day of interest (use when not d.start)
+
+# activity
+win.size <- 15 # window size in minutes for bout detection from step data
+acts <- c("Still", "Foot", "Vehicle", "Bicycle") # specify activities of interest
+
+
+```
+
+
+Save device data that used for other purposes than extracting behavioural features (battery, screen, mobile self-reports).
+
+```{r direct_save, eval=FALSE, include=FALSE}
+
+for(p in p.codes){
+  
+  # unpack participant data
+  P <- participants[[p]]
+  list2env(P, .GlobalEnv)
+  remove(P)
+  d.study <-
+  as.numeric(round(difftime(d.stop, d.start, units = "days")))
+  datasets.all <-
+  readRDS(paste0("./output_data/datasets_", p, ".Rds"))
+  
+  # battery
+  p.battery <- datasets.all$battery %>%
+  select(timestamp, dates, times, plugged, status, level) %>%
+  mutate(participant = p)
+  #saveRDS(p.battery, paste0("./output_data/battery_", p, ".Rds"))
+  
+  # screen
+  p.screen <- datasets.all$screen %>%
+  select(timestamp, dates, times, screen_on) %>%
+  mutate(participant = p)
+  #saveRDS(p.screen, paste0("./output_data/screen_", p, ".Rds"))
+  
+  # experience sampling
+  p.es <- datasets.all$experience_sampling %>%
+  select(timestamp, dates, times, question_id, answer) %>%
+  mutate(participant = p)
+  #saveRDS(p.es, paste0("./output_data/es_", p, ".Rds"))
+
+}
+
+```
+
+## Feature extraction
+
+### Mobility Features
+Location data is used to extract mobility features.
+Inputs include:
+* GPS log file (dataframe) with the following data: latitude, longitude, timestamp
+* loc.accuracy for filtering data with low location accuracy
+* thresholds defined above for trajectory extraction module (see "mod_traj" script)
+Ouputs include:
+* home: estimated coordinates for persons home location
+* gps.traj: original GPS log file with columns appended for if the point is a stay/move, event number (in sequence throughout day), location ID and distance to home
+* traj.summary: summary of gps.traj by event, including columns for event duration, centroid (stays only), whether it is home, displacement from previous event (stays only), maximum action range
+* mob.metrics: all mobility metrics calculated by day (output below gives column names) 
+
+
+```{r MOBILITY}
+
+for(p in p.codes){
+  
+  # unpack participant data
+  P <- participants[[p]]
+  list2env(P, .GlobalEnv); remove(P)
+  d.study <-  as.numeric(round(difftime(d.stop, d.start, units = "days"))) # participation period
+  datasets.all <-  readRDS(paste0("./output_data/datasets_", p, ".Rds"))
+  
+  # get location data
+  gps.log <- datasets.all$location %>%
+  filter(accuracy <= loc.accuracy) %>% # filter low accuracy GPS readings
+  select(lat, lon, timestamp, intervals.alt, dates, times) #intervals.alt optional
+  
+  # get distances between points
+  gps.log %<>% mutate(displacements = 
+                        c(0, distGeo(gps.log %>% select(lon, lat),
+                                     a = 6378137, f = 1 / 298.257223563)))
+  
+  # get trajectories and metrics
+  source("./Rscripts/mod_traj.R")                    # runs module to extracts "stay" and "move" events from location data 
+  mob.metrics <- get_metrics(traj.summary, gps.traj) # calculates behavioural metrics (by day)
+  mob.zones <- mobility_zones(traj.summary)         # calculates mobility zones entered as in questionnaire assessment (not in use)
+
+}
+
+names(mob.metrics)
+
+# clear environment
+remove(loc.accuracy, dT, dD, time.threshold.stay, time.threshold.go, dist.threshold, Qd)
+
+```
+
+### Steps
+Calculates total daily steps for each device.
+An alternative to the cumulative count signal is also generated showing number of steps per window for equal sized windows throughout the day. (Ultimatey, this was not used due to erratic step count updates).   
+
+```{r STEPS}
+
+#, eval=FALSE, include=FALSE
+
+for(p in p.codes){
+  
+  # unpack participant data
+  P <- participants[[p]]
+  list2env(P, .GlobalEnv); remove(P)
+  d.study <- as.numeric(round(difftime(d.stop,d.start,units="days")))  # participation period
+  datasets.all <- readRDS(paste0("./output_data/datasets_",p,".Rds"))
+  
+  # get step data
+  steps.log <- datasets.all$step_count %>% 
+    select(step_count, dsource, timestamp, intervals.alt, dates, times)
+  
+  # calculate results
+  source("./Rscripts/mod_steps.R") # calculate step counts by day
+  steps.win <- pattern_steps(steps.watch %>% ungroup(), # counts steps by time windows over the day
+                             win.size = win.size)
+} 
+
+# clear environment
+remove(win.size, steps.log)
+```
+
+### Activity Features
+Recognised activities data is used to detect bouts of the specified activities.
+The activity dataset is split into separate time series for each activity type (specified at setup above). 
+Within each activity set, bouts are calculated as follows: if a reading is within 10 minutes of previous, assign to the same bout as previous, otherwise start new bout. Custom functions for written for bout detection are located in the script "jrt_activity".
+Inputs include:
+* activity log with timestamp, activity label (e.g. "still"), confidence 
+* activities of interest
+* time window for bouts (default 10 minutes used here)
+Outputs include:
+* activity bouts, with activity type, bout number (chronological sequence), start and end time, number of readings, duration
+* summary per day giving the total number of bouts and cumulative durations for each activity type
+
+
+```{r ACTIVITY}
+
+for(p in p.codes){
+  
+  # unpack participant data
+  P <- participants[[p]]
+  list2env(P, .GlobalEnv); remove(P)
+  d.study <-  as.numeric(round(difftime(d.stop, d.start, units = "days"))) # participation period
+  datasets.all <-  readRDS(paste0("./output_data/datasets_", p, ".Rds"))
+  
+  # get activity data
+  activity.log <- datasets.all$activity %>% filter(label %in% acts)
+  
+  # keep only the entries with max confidence for each timestamp (multiple max-confidence activities per timestamp possible)
+  before <- nrow(activity.log)
+  activity.log %<>% 
+    group_by(timestamp) %>% filter(confidence == max(confidence)) %>% 
+    ungroup() %>% as.data.frame()
+  after <- nrow(activity.log)
+  cat("Complete: activity data reduced by ", 100-(100*after/before), "% by keeping only the max confidence for each unique timestamp \n");
+  
+  # calculate bouts
+  activity.bouts <- activity_bouts(activity.log, acts); remove(activity.log)
+  activity.bouts %<>% filter(size>1)
+  
+  # summarise by day
+  activity.bouts.pday <- activity.bouts %>% group_by(dates, activity) %>% 
+    summarise(total.time =  sum(duration), N = n()) %>%
+    mutate(mean.duration = total.time/N)
+  
+}
+
+```
+
+

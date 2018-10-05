@@ -1,9 +1,10 @@
 # ------------------------------------------------
 # MODULE: MOBLITITY // TRAJECTORY EXTRACTION
 #
-# Description:
-#
-#
+# This module detects "stay" and "move" events from raw location data. The
+# script below calls custom functions from jrt_mobility for detecting a home
+# location, detecting stay events, inferring location ID's and cleaning the
+# results.
 #
 # ------------------------------------------------
 
@@ -29,7 +30,5 @@ gps.traj %<>% ungroup(gps.traj) %>%
                             a=6378137, f=1/298.257223563))
 
 # add columns for action range and displacement, and summarise data by trajectory segment/event
-# action range: straight line distance between home and most distal point of a journey (furthest point for moves, average for stays)
-# displacements: straight line distances between consecutive stays
 traj.summary <- summarise_trajectories(gps.traj=gps.traj,
                                        dist.threshold=dist.threshold)
